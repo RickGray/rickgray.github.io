@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="一、前言上一遍介绍了DLL远程注入的基本原理，在这篇文章中，就来看看另一个DLL注入的方法，注册表DLL注入。 其实注册表注入相对远程DLL注入来说更简单、更方便一点，只需在注册表中修改AppInit_DLLs和LoadAppInit_DLLs的键值即可。 （User32.dll被加载到进程时，会获取AppInit_DLLs注册表项，若有值，则调用LoadLibrary() API加载用户DLL。">
+<meta name="keywords" content="windows,security">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DLL 注入练习之注册表 - AppInit_DLLs 表项">
+<meta property="og:url" content="http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="一、前言上一遍介绍了DLL远程注入的基本原理，在这篇文章中，就来看看另一个DLL注入的方法，注册表DLL注入。 其实注册表注入相对远程DLL注入来说更简单、更方便一点，只需在注册表中修改AppInit_DLLs和LoadAppInit_DLLs的键值即可。 （User32.dll被加载到进程时，会获取AppInit_DLLs注册表项，若有值，则调用LoadLibrary() API加载用户DLL。">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-6.png">
+<meta property="og:updated_time" content="2018-04-24T15:49:08.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DLL 注入练习之注册表 - AppInit_DLLs 表项">
+<meta name="twitter:description" content="一、前言上一遍介绍了DLL远程注入的基本原理，在这篇文章中，就来看看另一个DLL注入的方法，注册表DLL注入。 其实注册表注入相对远程DLL注入来说更简单、更方便一点，只需在注册表中修改AppInit_DLLs和LoadAppInit_DLLs的键值即可。 （User32.dll被加载到进程时，会获取AppInit_DLLs注册表项，若有值，则调用LoadLibrary() API加载用户DLL。">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>DLL 注入练习之注册表 - AppInit_DLLs 表项</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2014/08/25/the-remote-injection-of-dll-injection/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2014/06/30/osx-install-the-latest-metasploit/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&text=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&is_video=false&description=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=DLL 注入练习之注册表 - AppInit_DLLs 表项&body=Check out this article: http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&name=DLL 注入练习之注册表 - AppInit_DLLs 表项&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、前言"><span class="toc-number">1.</span> <span class="toc-text">一、前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、实践"><span class="toc-number">2.</span> <span class="toc-text">二、实践</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        DLL 注入练习之注册表 - AppInit_DLLs 表项
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2014-08-24T16:00:00.000Z" itemprop="datePublished">2014-08-25</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/windows/">windows</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h3 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h3><p>上一遍介绍了DLL远程注入的基本原理，在这篇文章中，就来看看另一个DLL注入的方法，注册表DLL注入。</p>
+<p>其实注册表注入相对远程DLL注入来说更简单、更方便一点，只需在注册表中修改AppInit_DLLs和LoadAppInit_DLLs的键值即可。</p>
+<p>（User32.dll被加载到进程时，会获取AppInit_DLLs注册表项，若有值，则调用LoadLibrary() API加载用户DLL。所有，DLL注册表注入，并不会影响所有进程，只会影响加载了user32.dll的进程）</p>
+<h3 id="二、实践"><a href="#二、实践" class="headerlink" title="二、实践"></a>二、实践</h3><p>（下面示例过程在windows 32位下测试成功）</p>
+<p>下面给出测试的DLL文件源码</p>
+<p>MessageBox.cpp</p>
+<pre><code>// MessageBox.cpp  
+
+#include &lt;windows.h&gt;  
+#include &lt;tchar.h&gt;  
+
+#define DEF_PROCESS_NAME &quot;cmd.exe&quot;  // 目标进程 cmd.exe  
+
+BOOL WINAPI DllMain(HINSTANCE hinstDll, DWORD dwReason, LPVOID lpvRevered) {  
+    char szPath[MAX_PATH] = {0, };  
+    char *p = NULL;  
+
+    GetModuleFileNameA(NULL, szPath, MAX_PATH);  
+    p = strrchr(szPath, &apos;\\&apos;);  
+
+    switch( dwReason ) {  
+        case DLL_PROCESS_ATTACH:  
+            if( !_stricmp(p + 1, DEF_PROCESS_NAME) )  
+                MessageBox(NULL, TEXT(&quot;Hello cmd!!!&quot;), TEXT(&quot;info&quot;), MB_OK);  // 被进程加载时弹出MessageBox(&quot;Dll Inject Success!!!&quot;)  
+            break;  
+        case DLL_PROCESS_DETACH:  
+            if( !_stricmp(p + 1, DEF_PROCESS_NAME) )  
+                MessageBox(NULL, TEXT(&quot;Goodbye cmd!!!&quot;), TEXT(&quot;info&quot;), MB_OK);  // 被进程卸载时弹出MessageBox(&quot;Dll unInject Ok!!!&quot;)  
+            break;  
+    }  
+    return TRUE;  
+}
+</code></pre><p>编译该DLL：<code>g++ --share -o MessageBox.dll MessageBox.cpp</code>（我们将MessageBox.dll文件放在d:\下面）</p>
+<p>改DLL被加载时，会检测进程名是否为“cmd.exe”，若为“cmd.exe”会弹出MessageBox进行相应提示。</p>
+<p>下面我们修改注册表，来使得每次加载user32.dll时都会加载我们自己编写的MessageBox.dll</p>
+<p>打开regedit.exe，进入如下路径。</p>
+<p><code>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows</code></p>
+<p>编辑修改AppInit_DLLs表项的值为我们编译的MessageBox.dll所在的路径地址</p>
+<p><img src="/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-1.png" alt=""></p>
+<p><img src="/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-2.png" alt=""></p>
+<p>然后修改LoadAppInit_DLLs注册表项的值为1，如下图所示</p>
+<p><img src="/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-3.png" alt=""></p>
+<p>注册表项修改完毕后，重启系统，使修改生效。重启完毕后，我们呢使用Process Explorer查看MessageBox.dll是否被注入进程。</p>
+<p><img src="/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-4.png" alt=""></p>
+<p>从上图可以看出，MessageBox.dll注入了部分进程，然后我们运行一下cmd.exe看是否或被注入MessageBox.dll。</p>
+<p><img src="/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-5.png" alt=""></p>
+<p>从上图红色框框所标识的部分来看，运行cmd.exe时因为加载了user32.dll，所以也同时加载了我们自己写的MessageBox.dll，在DllMain()运行时，检测到当前进程为“cmd.exe”因此弹出了MessageBox()，说明注册表DLL注入成功。</p>
+<p>若我们关闭cmd.exe，会弹出如下窗口</p>
+<p><img src="/images/articles/2014-08-25-the-registration-injection-of-dll-injection/register-6.png" alt=""></p>
+<p>MessageBox.dll被cmd.exe进程成功卸载。</p>
+<p>总结：DLL注册表注入相对与DLL远程注入来说，更加容易、方便，攻击者可以编写恶意DLL来做他任何想做的事情，所以，在排查一些异常现象的时候，不要忘了检查注册表- -||</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、前言"><span class="toc-number">1.</span> <span class="toc-text">一、前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、实践"><span class="toc-number">2.</span> <span class="toc-text">二、实践</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&text=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&is_video=false&description=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=DLL 注入练习之注册表 - AppInit_DLLs 表项&body=Check out this article: http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&title=DLL 注入练习之注册表 - AppInit_DLLs 表项"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/08/25/the-registration-injection-of-dll-injection/&name=DLL 注入练习之注册表 - AppInit_DLLs 表项&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

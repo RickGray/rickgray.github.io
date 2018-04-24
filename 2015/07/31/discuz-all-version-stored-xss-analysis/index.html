@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="乌云上有人发了《Discuz全版本存储型DOM XSS（可打管理员）附Discuz官方开发4大坑&amp;amp;验证脚本》，借此文顺带练习了一下 JS 调试，下面是整个漏洞的分析。 Discuz在用户评论处设置了帖子管理员编辑评论的功能，由于前端JS代码处理不当导致了经过恶意构造的评论内容在经过交互后形成XSS。下面通过payload的调试过程来解释该漏洞的形成过程。 首先，在评论处提交评论内容：[em">
+<meta name="keywords" content="web,security,xss">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Discuz 全版本存储 XSS 分析">
+<meta property="og:url" content="http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="乌云上有人发了《Discuz全版本存储型DOM XSS（可打管理员）附Discuz官方开发4大坑&amp;amp;验证脚本》，借此文顺带练习了一下 JS 调试，下面是整个漏洞的分析。 Discuz在用户评论处设置了帖子管理员编辑评论的功能，由于前端JS代码处理不当导致了经过恶意构造的评论内容在经过交互后形成XSS。下面通过payload的调试过程来解释该漏洞的形成过程。 首先，在评论处提交评论内容：[em">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/6.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/7.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/8.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/9.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/10.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/11.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/12.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/13.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/14.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Discuz 全版本存储 XSS 分析">
+<meta name="twitter:description" content="乌云上有人发了《Discuz全版本存储型DOM XSS（可打管理员）附Discuz官方开发4大坑&amp;amp;验证脚本》，借此文顺带练习了一下 JS 调试，下面是整个漏洞的分析。 Discuz在用户评论处设置了帖子管理员编辑评论的功能，由于前端JS代码处理不当导致了经过恶意构造的评论内容在经过交互后形成XSS。下面通过payload的调试过程来解释该漏洞的形成过程。 首先，在评论处提交评论内容：[em">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Discuz 全版本存储 XSS 分析</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/08/03/useful-command-tool-for-wifi-connection/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/07/25/rookiss-writeup-pwnable-kr/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&text=Discuz 全版本存储 XSS 分析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&is_video=false&description=Discuz 全版本存储 XSS 分析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Discuz 全版本存储 XSS 分析&body=Check out this article: http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&name=Discuz 全版本存储 XSS 分析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Discuz 全版本存储 XSS 分析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-07-30T16:00:00.000Z" itemprop="datePublished">2015-07-31</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>, <a class="tag-link" href="/tags/xss/">xss</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>乌云上有人发了<a href="http://wooyun.org/bugs/wooyun-2010-099979" target="_blank" rel="noopener">《Discuz全版本存储型DOM XSS（可打管理员）附Discuz官方开发4大坑&amp;验证脚本》</a>，借此文顺带练习了一下 JS 调试，下面是整个漏洞的分析。</p>
+<p>Discuz在用户评论处设置了帖子管理员编辑评论的功能，由于前端JS代码处理不当导致了经过恶意构造的评论内容在经过交互后形成XSS。下面通过payload的调试过程来解释该漏洞的形成过程。</p>
+<p>首先，在评论处提交评论内容：<code>[email=2&quot;onmouseover=&quot;alert(2)]2[/email]</code></p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/1.png" alt=""></p>
+<p>由于服务器对引号等有过滤，所以提交后，查看源码会发现引号已经被实体编码了。</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/2.png" alt=""></p>
+<p>对于普通用户提交的评论，管理员或者版主都有权利对其发表的评论进行管理。</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/3.png" alt=""></p>
+<p>当管理或版主对用户的评论点击管理时，前端JS代码就开始处理，弹出一个编辑框供管理或版主操作。在JS代码处理的过程中，首先获取用户评论的内容，代码位于当前页面中：</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/4.png" alt=""></p>
+<p>而 <code>$()</code> 函数原型位于 /static/js/common.js 中：</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/5.png" alt=""></p>
+<p>使用了原生的 <code>document.getElementById()</code> 函数来获取页面中的对应对象，此处获取的是标有<code>id=”e_textarea”</code>的对象，其对应的值为用户评论的内容。</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/6.png" alt=""></p>
+<p>而由于JS原生函数的原因，被服务器后端转义的引号会被重新是渲染回引号：</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/7.png" alt=""></p>
+<p>获取到<code>id=”e_textarea”</code>对象后，代码对浏览器进行了判断，并将结果赋值给变量 <code>var wysiwyg</code>。</p>
+<p>在页面上另一处JS代码判断了变量<code>wysiwyg</code>的值，然后开始渲染编辑框：</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/8.png" alt=""></p>
+<p>这里使用了Firfox浏览器进行测试，在前面wysiwyg变量的值为1，所以会执行如下代码</p>
+<pre><code>newEditor(1, bbcode2html(textobj.value))
+</code></pre><p>其中textobj.value的值为：<code>[email=2&quot;onmouseover=&quot;alert(2)]2[/email]</code>（经过document.getElementById()获取的对象解析了实体编码）</p>
+<p>在进行<code>newEditor()</code>时，会对传入的内容使用函数bbcode2html()进行编码过滤，其函数原型位于/static/js/bbcode.js，下面是Discuz对程序所支持的shortcode进行处理的部分代码。</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/9.png" alt=""></p>
+<p>程序匹配其支持的shortcode然后正则替换为相应的前端格式代码，因此次测试的payload为<code>[email=2”onmouseover=”alert(2)]2[/email]</code>，因此图中红色标注的代码会得到执行。</p>
+<pre><code>str = str.replace(/\[email=(.[^\[]*)\](.*?)\[\/email\]/ig, &apos;&lt;a href=&quot;mailto:$1&quot; target=&quot;_blank&quot;&gt;$2&lt;/a&gt;&apos;);
+</code></pre><p>经过正则匹配替换后，str的值会变为：<code>&lt;a href=&quot;mailto:2&quot;onmouseover=&quot;alert(2)&quot; target=&quot;_blank&quot;&gt;2&lt;/a&gt;</code></p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/10.png" alt=""></p>
+<p>最终bbcode2html()函数会返回经过转换后的textobj.value，值为：<code>&lt;a href=&quot;mailto:2&quot;onmouseover=&quot;alert(2)&quot; target=&quot;_blank&quot;&gt;2&lt;/a&gt;</code></p>
+<p>然后调用newEditor()函数进编辑框的渲染，其函数原型位于/static/js/editor.js</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/11.png" alt=""></p>
+<p>从函数原型可以看到，代码再次判断浏览器类型然后开始渲染，由于wysiwyq变量的值为1，最终会执行</p>
+<pre><code>writeEditorContents(isUndefined(initialtext) ? textobj.value: initialtext);
+</code></pre><p>而调用newEditor()函数时，传递了initialtext参数，其值就为经过bbcode2html()函数处理后的textobj.value的值。</p>
+<p>前端JS最终使用writeEditorContents()函数对页面进行渲染，其过程中会将initialtext变量的值直接写入到页面中，最终形成XSS。</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/12.png" alt=""></p>
+<p>渲染成功后，查看页面源代码：</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/13.png" alt=""></p>
+<p>当管理员或者版主对其进行交互时就会触发alert(2)。</p>
+<p><img src="/images/articles/2015-07-31-discuz-all-version-stored-xss-analysis/14.png" alt=""></p>
+<p>即使后段服务器对输入内容进行了过滤和转义，但是在前段渲染的时候依然有可能形成 XSS。</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&text=Discuz 全版本存储 XSS 分析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&is_video=false&description=Discuz 全版本存储 XSS 分析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Discuz 全版本存储 XSS 分析&body=Check out this article: http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&title=Discuz 全版本存储 XSS 分析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/&name=Discuz 全版本存储 XSS 分析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

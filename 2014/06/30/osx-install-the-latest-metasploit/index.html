@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Mac 集成强大的渗透神器 metasploit。  从 github 上克隆 Metasploit 项目到本地；  安装 postgresql 并进行配置；  安装特定版本的 ruby，并解决依赖；   一、从 github 上克隆 Metasploit 项目到本地话说 github 真是什么都有，很多好的项目在上面都能找到，首先打开终端并输入下列命令，因为 10.9.3 自带了 git，所以就">
+<meta name="keywords" content="web,msf">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OSX 上源码安装 Metasploit">
+<meta property="og:url" content="http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="Mac 集成强大的渗透神器 metasploit。  从 github 上克隆 Metasploit 项目到本地；  安装 postgresql 并进行配置；  安装特定版本的 ruby，并解决依赖；   一、从 github 上克隆 Metasploit 项目到本地话说 github 真是什么都有，很多好的项目在上面都能找到，首先打开终端并输入下列命令，因为 10.9.3 自带了 git，所以就">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-04-22T16:17:43.278Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OSX 上源码安装 Metasploit">
+<meta name="twitter:description" content="Mac 集成强大的渗透神器 metasploit。  从 github 上克隆 Metasploit 项目到本地；  安装 postgresql 并进行配置；  安装特定版本的 ruby，并解决依赖；   一、从 github 上克隆 Metasploit 项目到本地话说 github 真是什么都有，很多好的项目在上面都能找到，首先打开终端并输入下列命令，因为 10.9.3 自带了 git，所以就">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>OSX 上源码安装 Metasploit</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2014/08/25/the-registration-injection-of-dll-injection/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2014/05/27/windows-hook-simple/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&text=OSX 上源码安装 Metasploit"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&is_video=false&description=OSX 上源码安装 Metasploit"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=OSX 上源码安装 Metasploit&body=Check out this article: http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&name=OSX 上源码安装 Metasploit&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、从-github-上克隆-Metasploit-项目到本地"><span class="toc-number">1.</span> <span class="toc-text">一、从 github 上克隆 Metasploit 项目到本地</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、安装-postgresql-并进行配置"><span class="toc-number">2.</span> <span class="toc-text">二、安装 postgresql 并进行配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、安装特定版本的-ruby，并解决依赖"><span class="toc-number">3.</span> <span class="toc-text">三、安装特定版本的 ruby，并解决依赖</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        OSX 上源码安装 Metasploit
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2014-06-29T16:00:00.000Z" itemprop="datePublished">2014-06-30</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/msf/">msf</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>Mac 集成强大的渗透神器 metasploit。</p>
+<ol>
+<li><p>从 github 上克隆 Metasploit 项目到本地；</p>
+</li>
+<li><p>安装 postgresql 并进行配置；</p>
+</li>
+<li><p>安装特定版本的 ruby，并解决依赖；</p>
+</li>
+</ol>
+<h3 id="一、从-github-上克隆-Metasploit-项目到本地"><a href="#一、从-github-上克隆-Metasploit-项目到本地" class="headerlink" title="一、从 github 上克隆 Metasploit 项目到本地"></a>一、从 github 上克隆 Metasploit 项目到本地</h3><p>话说 github 真是什么都有，很多好的项目在上面都能找到，首先打开终端并输入下列命令，因为 10.9.3 自带了 git，所以就不需要另外安装了。</p>
+<pre><code>git clone https://github.com/rapid7/metasploit-framework.git /usr/local/share/metasploit-framework
+</code></pre><p>克隆到本地后，将 <code>metasploit-framework/config/</code> 目录下的配置文件：<code>database.yml</code> 添加到环境变量中（database.yml 也许不存在，直接复制database.yml.example）。</p>
+<p>在 <code>$HOME/.bash_profile</code> 或者其他配置文件中添加下面这条配置：</p>
+<pre><code>export MSF_DATABASE_CONFIG=/usr/local/share/metasploit-framework/config/database.yml
+</code></pre><h3 id="二、安装-postgresql-并进行配置"><a href="#二、安装-postgresql-并进行配置" class="headerlink" title="二、安装 postgresql 并进行配置"></a>二、安装 postgresql 并进行配置</h3><p>metasploit 下载完后，不急着去配置，因为 metasploit 的默认数据库 postgresql 还没有装上。</p>
+<p>你可以直接使用 brew 来下载并自动安装 postgresql，可以运行如下命令：</p>
+<pre><code>brew install postgresql --without-ossp-build
+</code></pre><p>等待自动安装完毕，完成后，初始化 postgresql（若出现错误删掉 <code>/usr/local/var/postgres</code>，并重试）</p>
+<pre><code>initdb /usr/local/var/postgres
+</code></pre><p>初始化完毕后，为 metasploit 添加数据库用户和创建相应DB：</p>
+<pre><code>createuser msf -P -h localhost    
+createdb -O msf msf -h localhost
+</code></pre><p>（上面参数不懂了，大家可以百度一下，这里就不做过多解释了）</p>
+<p>上面的步骤完成后，需更改 metasploit 的数据库连接配置，也就是第一步中的 database.yml 文件。</p>
+<p>在 database.yml 中，将信息修改如下：</p>
+<pre><code>production:  
+    adapter: postgresql  
+    database: msf  
+    username: msf  
+    password: &lt;your password&gt;  
+    host: 127.0.0.1  
+    port: 5432  
+    pool: 75  
+    timeout: 5
+</code></pre><p>完成后，进入第三步！</p>
+<p>（可自行添加 alisa 来简便每一次 postgresql 的启动）</p>
+<pre><code>alias pg_start=&apos;pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start&apos;  
+alias pg_stop=&apos;pg_ctl -D /usr/local/var/postgres stop&apos;
+</code></pre><h3 id="三、安装特定版本的-ruby，并解决依赖"><a href="#三、安装特定版本的-ruby，并解决依赖" class="headerlink" title="三、安装特定版本的 ruby，并解决依赖"></a>三、安装特定版本的 ruby，并解决依赖</h3><p>说到 ruby 的多版本管理，这里就要用最给力的工具了 rbenv（可以在 github 上找到，也可以使用 brew 直接安装）</p>
+<pre><code>brew install rbenv ruby-build
+</code></pre><p>rbenv 安装完成后，在 <code>$HOST/.bash_profile</code> 或其他配置文件中添加如下设置：</p>
+<pre><code>eval &quot;$(rbenv init -)&quot;
+</code></pre><p>下面就可以通过 rbenv 来安装特定版本的 ruby 了，首先列出当前可用的 ruby 版本：</p>
+<pre><code>rbenv install --list
+</code></pre><p>可以看到几乎所有的 ruby 版本都有，这里我们选择安装 ruby-1.9.3-p547（因为OS X 10.9.3 自带的 ruby 为 2.0.0 版本，在某些地方会产生问题）</p>
+<pre><code>rbenv install 1.9.3-p547
+</code></pre><p>这里可能会等一会儿，rbenv 会将各个版本的 ruby 安装在 <code>$HOST/.rbenv/versions/</code> 下，完成后，将下载的版本设置为系统默认：</p>
+<pre><code>rbenv rehash  
+rbenv global 1.9.3-p547
+</code></pre><p>完成后，重新打开终端，输入 <code>ruby --version</code> 就可以看到当前默认的 ruby 版本已经设置成为 1.9.3-p547</p>
+<p>下面安装 bundle 来解决依赖问题：</p>
+<pre><code>gem install bundle
+</code></pre><p>安装的时候，可能会出现域名无法解析的问题，多试几次即可。</p>
+<p>bundle 安装完毕后，再次进入 metasploit 的主目录解决模块包的依赖：</p>
+<pre><code>cd /usr/local/share/metasploit-framework  
+rbenv rehash  
+bundle install
+</code></pre><p>（在 bundle install 的过程中，可能会出现某一个特定版本的模块安装失败的问题，解决方法：根据 GemFiles 里的版本限制，自行使用 gem 安装替代版本，完成后，删掉GemFiles.lock，重新运行 bundle install）</p>
+<p>依赖解决后，即可运行目录下的 msfconsole 启动 metasploit 终端控制器（已启动postgresql，不然会连不上数据库）</p>
+<p>可以将 msf 命令批量 ln 到 bin 下：</p>
+<pre><code>for MSF in $(ls msf*); do ln -s /usr/local/share/metasploit-framework/$MSF /usr/local/bin/$MSF;done
+</code></pre><p>至此，metasploit 就已经安装完毕了，enjoy this！</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、从-github-上克隆-Metasploit-项目到本地"><span class="toc-number">1.</span> <span class="toc-text">一、从 github 上克隆 Metasploit 项目到本地</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、安装-postgresql-并进行配置"><span class="toc-number">2.</span> <span class="toc-text">二、安装 postgresql 并进行配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、安装特定版本的-ruby，并解决依赖"><span class="toc-number">3.</span> <span class="toc-text">三、安装特定版本的 ruby，并解决依赖</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&text=OSX 上源码安装 Metasploit"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&is_video=false&description=OSX 上源码安装 Metasploit"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=OSX 上源码安装 Metasploit&body=Check out this article: http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&title=OSX 上源码安装 Metasploit"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/06/30/osx-install-the-latest-metasploit/&name=OSX 上源码安装 Metasploit&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

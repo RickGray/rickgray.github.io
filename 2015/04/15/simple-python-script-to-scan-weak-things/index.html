@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="好久没发文了，这次要说的只是一个小小的扫描工具，尽请实战，工具会不定期添加新功能（如果喜欢star一下吧 thx! :P） 项目地址：https://github.com/RickGray/dirscan 克隆项目至本地： git clone https://github.com/RickGray/dirscan.git 直接获取单文件（特定环境方便，你懂的）： curl -O https://g">
+<meta name="keywords" content="security,python">
+<meta property="og:type" content="article">
+<meta property="og:title" content="简单的敏感文件扫描脚本">
+<meta property="og:url" content="http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="好久没发文了，这次要说的只是一个小小的扫描工具，尽请实战，工具会不定期添加新功能（如果喜欢star一下吧 thx! :P） 项目地址：https://github.com/RickGray/dirscan 克隆项目至本地： git clone https://github.com/RickGray/dirscan.git 直接获取单文件（特定环境方便，你懂的）： curl -O https://g">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-04-15-simple-python-script-to-scan-weak-things/screenshot.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="简单的敏感文件扫描脚本">
+<meta name="twitter:description" content="好久没发文了，这次要说的只是一个小小的扫描工具，尽请实战，工具会不定期添加新功能（如果喜欢star一下吧 thx! :P） 项目地址：https://github.com/RickGray/dirscan 克隆项目至本地： git clone https://github.com/RickGray/dirscan.git 直接获取单文件（特定环境方便，你懂的）： curl -O https://g">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-04-15-simple-python-script-to-scan-weak-things/screenshot.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>简单的敏感文件扫描脚本</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/05/02/use-vitualenv-to-build-your-python-virtualenv/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/03/23/bctf2015-writeup/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&text=简单的敏感文件扫描脚本"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&is_video=false&description=简单的敏感文件扫描脚本"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=简单的敏感文件扫描脚本&body=Check out this article: http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&name=简单的敏感文件扫描脚本&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        简单的敏感文件扫描脚本
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-04-14T16:00:00.000Z" itemprop="datePublished">2015-04-15</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/python/">python</a>, <a class="tag-link" href="/tags/security/">security</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>好久没发文了，这次要说的只是一个小小的扫描工具，尽请实战，工具会不定期添加新功能（如果喜欢star一下吧 thx! :P）</p>
+<p>项目地址：<a href="https://github.com/RickGray/dirscan" target="_blank" rel="noopener">https://github.com/RickGray/dirscan</a></p>
+<p>克隆项目至本地：</p>
+<pre><code>git clone https://github.com/RickGray/dirscan.git
+</code></pre><p>直接获取单文件（特定环境方便，你懂的）：</p>
+<pre><code>curl -O https://github.com/RickGray/dirscan/raw/master/dirscan.py
+</code></pre><p>或者：</p>
+<pre><code>wget https://github.com/RickGray/dirscan/raw/master/dirscan.py
+</code></pre><p>简单扫描：</p>
+<pre><code>python dirscan.py http://testphp.vulnweb.com mulu.txt
+</code></pre><p>使用代理：</p>
+<pre><code>python dirscan.py -p socks5://&lt;proxy_host&gt;:&lt;proxy_port&gt; http://testphp.vulnweb.com common.txt
+
+python dirscan.py --proxy=http://&lt;proxy_host&gt;:&lt;proxy_port&gt; http://testphp.vulnweb.com common.txt
+</code></pre><p>指定扫描线程数：</p>
+<pre><code>python -t 30 http://testphp.vulnweb.com common.txt
+</code></pre><p>如果遇到Bug请直接Git提issus :)</p>
+<p><img src="/images/articles/2015-04-15-simple-python-script-to-scan-weak-things/screenshot.png" alt="img"></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&text=简单的敏感文件扫描脚本"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&is_video=false&description=简单的敏感文件扫描脚本"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=简单的敏感文件扫描脚本&body=Check out this article: http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&title=简单的敏感文件扫描脚本"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/04/15/simple-python-script-to-scan-weak-things/&name=简单的敏感文件扫描脚本&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

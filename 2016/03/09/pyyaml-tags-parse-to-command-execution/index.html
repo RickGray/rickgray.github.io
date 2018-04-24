@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="近日回顾了 PyCon 2015 上 @Tom Eastman 所讲的关于 Python 序列化格式的安全议题 -《Serialization formats are not toys》。议题主要介绍了 YAML、XML 和 JSON 三种格式用于 Python 序列化数据处理所存在的一些安全问题，其中 XML 部分讲解的是 Python 中的 XXE，而 Python 处理 JSON 数据本身不">
+<meta name="keywords" content="web,security">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PyYAML 对象类型解析导致的命令执行问题">
+<meta property="og:url" content="http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="近日回顾了 PyCon 2015 上 @Tom Eastman 所讲的关于 Python 序列化格式的安全议题 -《Serialization formats are not toys》。议题主要介绍了 YAML、XML 和 JSON 三种格式用于 Python 序列化数据处理所存在的一些安全问题，其中 XML 部分讲解的是 Python 中的 XXE，而 Python 处理 JSON 数据本身不">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2016-03-09-pyyaml-tags-parse-to-command-execution/1.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PyYAML 对象类型解析导致的命令执行问题">
+<meta name="twitter:description" content="近日回顾了 PyCon 2015 上 @Tom Eastman 所讲的关于 Python 序列化格式的安全议题 -《Serialization formats are not toys》。议题主要介绍了 YAML、XML 和 JSON 三种格式用于 Python 序列化数据处理所存在的一些安全问题，其中 XML 部分讲解的是 Python 中的 XXE，而 Python 处理 JSON 数据本身不">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2016-03-09-pyyaml-tags-parse-to-command-execution/1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>PyYAML 对象类型解析导致的命令执行问题</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2016/04/08/serialization-troubles-in-message-queuing-componet/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2016/02/24/use-python-features-to-execute-arbitrary-codes-in-jinja2-templates/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&text=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&is_video=false&description=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=PyYAML 对象类型解析导致的命令执行问题&body=Check out this article: http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&name=PyYAML 对象类型解析导致的命令执行问题&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、Python-中处理-YAML-格式数据"><span class="toc-number">1.</span> <span class="toc-text">一、Python 中处理 YAML 格式数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、PyYAML-特有类型解析-Python-对象"><span class="toc-number">2.</span> <span class="toc-text">二、PyYAML 特有类型解析 Python 对象</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、load-和-safe-load"><span class="toc-number">3.</span> <span class="toc-text">三、load() 和 safe_load()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、总结"><span class="toc-number">4.</span> <span class="toc-text">四、总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        PyYAML 对象类型解析导致的命令执行问题
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2016-03-08T16:00:00.000Z" itemprop="datePublished">2016-03-09</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/web/">web</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>近日回顾了 PyCon 2015 上 <a href="https://twitter.com/tveastman" target="_blank" rel="noopener">@Tom Eastman</a> 所讲的关于 Python 序列化格式的安全议题 -<a href="https://www.youtube.com/watch?v=kjZHjvrAS74" target="_blank" rel="noopener">《Serialization formats are not toys》</a>。议题主要介绍了 YAML、XML 和 JSON 三种格式用于 Python 序列化数据处理所存在的一些安全问题，其中 XML 部分讲解的是 Python 中的 XXE，而 Python 处理 JSON 数据本身不存在问题，但在前端 JavaScript 对返回 JSON 进行处理时常常直接使用 <code>eval()</code> 来转换类型从而留下安全隐患。</p>
+<p>关于 XML 和 JSON 格式相关的安全问题本文就不多提了，本文仅记录下议题中所提到的 Python PyYAML 模块在处理 YAML 格式数据时所存在的问题。</p>
+<h3 id="一、Python-中处理-YAML-格式数据"><a href="#一、Python-中处理-YAML-格式数据" class="headerlink" title="一、Python 中处理 YAML 格式数据"></a>一、Python 中处理 YAML 格式数据</h3><p>YAML 在数据序列化和配置文件中使用比较广泛，在 Ruby On Rails 中就使用 YAML 作为配置文件。最新的 YAML 标准版本为 1.2，而目前大多数语言对 YAML 解析实现都为 1.1 甚至 1.0 版本，各版本标准可通过官方 <a href="http://www.yaml.org" target="_blank" rel="noopener">yaml.org</a> 进行查阅。一个简单的 YAML 数据为：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">date:</span> <span class="type">!!str</span> <span class="number">2016</span><span class="bullet">-03</span><span class="bullet">-09</span></span><br><span class="line"><span class="attr">weekday:</span> <span class="string">Wednesday</span></span><br><span class="line"><span class="attr">weather:</span> <span class="string">sunny</span></span><br><span class="line"><span class="attr">plans:</span> <span class="meta">&amp;plans</span></span><br><span class="line">    <span class="number">1</span><span class="string">:</span> <span class="string">daliy</span> <span class="string">resarch</span></span><br><span class="line">    <span class="number">2</span><span class="string">:</span> <span class="string">daliy</span> <span class="string">meals</span></span><br><span class="line">    <span class="number">3</span><span class="string">:</span> <span class="string">play</span> <span class="string">games</span> <span class="string">tonight</span></span><br><span class="line"><span class="attr">todo:</span></span><br><span class="line">    <span class="string">&lt;&lt;:</span> <span class="meta">*plans</span></span><br><span class="line">    <span class="number">3</span><span class="string">:</span> <span class="string">others</span></span><br><span class="line"><span class="string">...</span></span><br></pre></td></tr></table></figure>
+<p>保存为 <code>sample.yml</code> 然后使用 Python 第三方模块 PyYAML（pip install PyYAML) 来对其进行解析并输出：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> yaml</span><br><span class="line"><span class="keyword">import</span> pprint</span><br><span class="line"></span><br><span class="line">pprint.pprint(yaml.load(file(<span class="string">'sample.yml'</span>, <span class="string">'r'</span>)))</span><br></pre></td></tr></table></figure>
+<p>运行代码可以得到输出：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">(env)➜  python python test.py</span><br><span class="line">&#123;&apos;date&apos;: &apos;2016-03-09&apos;,</span><br><span class="line"> &apos;plans&apos;: &#123;1: &apos;daliy resarch&apos;, 2: &apos;daliy meals&apos;, 3: &apos;play games tonight&apos;&#125;,</span><br><span class="line"> &apos;todo&apos;: &#123;1: &apos;daliy resarch&apos;, 2: &apos;daliy meals&apos;, 3: &apos;others&apos;&#125;,</span><br><span class="line"> &apos;weather&apos;: &apos;sunny&apos;,</span><br><span class="line"> &apos;weekday&apos;: &apos;Wednesday&apos;&#125;</span><br></pre></td></tr></table></figure>
+<p>PyYAML 在解析数据的时候遇到特定格式的时间数据会将其自动转化为 Python 时间对象，例如 <code>sample.yml</code> 中 <code>date</code> 节点的值使用 <code>!!str</code> 指定其在解析的时候转换为字符串，如果不使用强制类型转换，会自动将 <code>2016-09-03</code> 解析为 Python 中的 <code>datetime.date</code> 对象。如下代码和输出：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> yaml</span><br><span class="line"><span class="keyword">import</span> pprint</span><br><span class="line"></span><br><span class="line">content = <span class="string">'''---</span></span><br><span class="line"><span class="string">date: 2016-03-09</span></span><br><span class="line"><span class="string">...'''</span></span><br><span class="line">pprint.pprint(yaml.load(content))</span><br><span class="line"><span class="comment"># (env)➜  python python test1.py</span></span><br><span class="line"><span class="comment"># &#123;'date': datetime.date(2016, 3, 9)&#125;</span></span><br></pre></td></tr></table></figure>
+<p>（本文重点不在 YAML 格式上，详情可参考官方文档和 wiki）</p>
+<h3 id="二、PyYAML-特有类型解析-Python-对象"><a href="#二、PyYAML-特有类型解析-Python-对象" class="headerlink" title="二、PyYAML 特有类型解析 Python 对象"></a>二、PyYAML 特有类型解析 Python 对象</h3><p>除开 YAML 格式中常规的列表、字典和字符串整形等类型转化外，各个语言的 YAML 解析器或多或少都会针对其语言实现一套特殊的对象转化规则。例如 Ruby 中可以将类对象 dump 为 YAML 格式的文本数据（文件 <code>person.rb</code>）：</p>
+<figure class="highlight ruby"><table><tr><td class="code"><pre><span class="line"><span class="keyword">require</span> <span class="string">'yaml'</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Person</span></span></span><br><span class="line">  <span class="keyword">attr_accessor</span> <span class="symbol">:name</span>, <span class="symbol">:age</span>, <span class="symbol">:children</span></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">initialize</span><span class="params">(name, age, children=<span class="literal">nil</span>)</span></span></span><br><span class="line">    @name = name</span><br><span class="line">    @age = age</span><br><span class="line">    @children = children</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line">children = [Person.new(<span class="string">'John Smith'</span>, <span class="number">12</span>), Person.new(<span class="string">'Jan Smith'</span>, <span class="number">11</span>)]</span><br><span class="line">tom = Person.new(<span class="string">'Tom Smith'</span>, <span class="number">23</span>, children)</span><br><span class="line">File.open(<span class="string">'sample2.yml'</span>, <span class="string">'w'</span>) <span class="keyword">do</span> <span class="params">|os|</span></span><br><span class="line">  YAML::dump(tom, os)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>运行脚本得到输出为（为了突入结构将其格式化，默认情况缩紧不严谨）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">--- </span><br><span class="line">!ruby/object:Person</span><br><span class="line">    name: Tom Smith</span><br><span class="line">    age: 23</span><br><span class="line">    children:</span><br><span class="line">        - !ruby/object:Person</span><br><span class="line">            name: John Smith</span><br><span class="line">            age: 12</span><br><span class="line">            children:</span><br><span class="line">        - !ruby/object:Person</span><br><span class="line">            name: Jan Smith</span><br><span class="line">            age: 11</span><br><span class="line">            children:</span><br></pre></td></tr></table></figure>
+<p>其中 <code>!ruby/object:Person</code> 指代的是 <code>person.rb</code> 中的 <code>Person</code> 类，是 Ruby 里 yaml 模块针对 Ruby 语言的特有实现，如果使用其他语言的 YAML 解析器来加载这段 YAML 文本必定会报错。不同语言针对 YAML 基本都有一套其对语言对象的解析扩展，这也是 YAML 在各语言之间兼容性差的原因之一。</p>
+<p>而在 Python 中，一个对象序列化为 YAML 数据是这个样子的：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> yaml</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Person</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, name, age, sponse=None, children=None)</span>:</span></span><br><span class="line">        self.name = name</span><br><span class="line">        self.age = age</span><br><span class="line">        self.sponse = sponse</span><br><span class="line">        self.children = children</span><br><span class="line"></span><br><span class="line">jane = Person(<span class="string">'Jane Smith'</span>, <span class="number">25</span>)</span><br><span class="line">children = [Person(<span class="string">'Jimmy Smith'</span>, <span class="number">15</span>), Person(<span class="string">'Jenny Smith'</span>, <span class="number">12</span>)]</span><br><span class="line">john = Person(<span class="string">'John Smith'</span>, <span class="number">37</span>, jane, children)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> yaml.dump(john)</span><br><span class="line"><span class="keyword">print</span> yaml.dump(open(<span class="string">'sample.yml'</span>, <span class="string">'r'</span>))</span><br></pre></td></tr></table></figure>
+<p>运行脚本输出结果为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">(env)➜  python python person.py</span><br><span class="line">!!python/object:__main__.Person</span><br><span class="line">age: 37</span><br><span class="line">children:</span><br><span class="line">- !!python/object:__main__.Person &#123;age: 15, children: null, name: Jimmy Smith, sponse: null&#125;</span><br><span class="line">- !!python/object:__main__.Person &#123;age: 12, children: null, name: Jenny Smith, sponse: null&#125;</span><br><span class="line">name: John Smith</span><br><span class="line">sponse: !!python/object:__main__.Person &#123;age: 25, children: null, name: Jane Smith,</span><br><span class="line">  sponse: null&#125;</span><br><span class="line"></span><br><span class="line">!!python/object:__builtin__.file &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到 <code>!!python/object:__main__.Person</code> 为 PyYAML 中对 Python 对象的类型转化标签，在解析时会将后面的值作为 <code>Person</code> 类的实例化参数进行对象还原。在上面的测试代码中特地 dump 了一下文件对象 <code>open(&#39;sample.yml&#39;, &#39;r&#39;)</code>，在 YAML 中对应的数据为 <code>!!python/object:__builtin__.file {}</code>，这里参数为空，其实通过 PyYAML load() 还原回去会发现是一个为初始化参数并已经处于关闭状态的畸形 file 实例对象。</p>
+<p>然而看到 <code>__builtin__</code> 这个关键字就应该敏感起来，通过查看 PyYAML 源码可以得到其针对 Python 语言特有的标签解析的处理函数对应列表（<code>$PYTHON_HOME/lib/site-packages/yaml/constructor.py</code>612 - 674 行）：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">!!python/none             =&gt;  Constructor.construct_yaml_nul</span><br><span class="line">!!python/bool             =&gt;  Constructor.construct_yaml_boo</span><br><span class="line">!!python/str              =&gt;  Constructor.construct_python_str</span><br><span class="line">!!python/unicode          =&gt;  Constructor.construct_python_unicode</span><br><span class="line">!!python/int              =&gt;  Constructor.construct_yaml_int</span><br><span class="line">!!python/long             =&gt;  Constructor.construct_python_long</span><br><span class="line">!!python/float            =&gt;  Constructor.construct_yaml_float</span><br><span class="line">!!python/complex          =&gt;  Constructor.construct_python_complex</span><br><span class="line">!!python/list             =&gt;  Constructor.construct_yaml_seq</span><br><span class="line">!!python/tuple            =&gt;  Constructor.construct_python_tuple</span><br><span class="line">!!python/dict             =&gt;  Constructor.construct_yaml_map</span><br><span class="line">!!python/name:            =&gt;  Constructor.construct_python_name</span><br><span class="line">!!python/module:          =&gt;  Constructor.construct_python_module</span><br><span class="line">!!python/object:          =&gt;  Constructor.construct_python_object</span><br><span class="line">!!python/object/apply:    =&gt;  Constructor.construct_python_object_apply</span><br><span class="line">!!python/object/new:      =&gt;  Constructor.construct_python_object_new</span><br></pre></td></tr></table></figure>
+<p>其中需要特别指出的是 <code>!!python/object/apply</code> 这个对象标签，通过该标签可以在 PyYAML 解析 YAML 数据时，动态的创建 Python 对象，关键代码如下（<code>$PYTHON_HOME/lib/site-packages/yaml/constructor.py</code> 574 - 607 行）：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">construct_python_object_apply</span><span class="params">(self, suffix, node, newobj=False)</span>:</span></span><br><span class="line">    <span class="comment"># ...</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(node, SequenceNode):</span><br><span class="line">        args = self.construct_sequence(node, deep=<span class="keyword">True</span>)</span><br><span class="line">        kwds = &#123;&#125;</span><br><span class="line">        state = &#123;&#125;</span><br><span class="line">        listitems = []</span><br><span class="line">        dictitems = &#123;&#125;</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        value = self.construct_mapping(node, deep=<span class="keyword">True</span>)</span><br><span class="line">        args = value.get(<span class="string">'args'</span>, [])</span><br><span class="line">        kwds = value.get(<span class="string">'kwds'</span>, &#123;&#125;)</span><br><span class="line">        state = value.get(<span class="string">'state'</span>, &#123;&#125;)</span><br><span class="line">        listitems = value.get(<span class="string">'listitems'</span>, [])</span><br><span class="line">        dictitems = value.get(<span class="string">'dictitems'</span>, &#123;&#125;)</span><br><span class="line">    instance = self.make_python_instance(suffix, node, args, kwds, newobj)  <span class="comment"># 使用参数实例化指定对象</span></span><br><span class="line">    <span class="keyword">if</span> state:</span><br><span class="line">        self.set_python_instance_state(instance, state)</span><br><span class="line">    <span class="keyword">if</span> listitems:</span><br><span class="line">        instance.extend(listitems)</span><br><span class="line">    <span class="keyword">if</span> dictitems:</span><br><span class="line">        <span class="keyword">for</span> key <span class="keyword">in</span> dictitems:</span><br><span class="line">            instance[key] = dictitems[key]</span><br><span class="line">    <span class="keyword">return</span> instance</span><br></pre></td></tr></table></figure>
+<p>例如提供 Python 标签 <code>!!python/object/apply:time.ctime []</code>，最终在解析过程中会动态加载 time 模块然后调用 <code>ctime()</code> 函数，具体实现在 <code>make_python_instance()</code> 中，处理过程可自行查看源码，这里就不单独分析了。</p>
+<h3 id="三、load-和-safe-load"><a href="#三、load-和-safe-load" class="headerlink" title="三、load() 和 safe_load()"></a>三、load() 和 safe_load()</h3><p>前面已经说过通过 <code>!!python/object/apply</code> 这个对象标签可以在 PyYAML 解析（反序列化）的时候构造 Python 对象实例和调用函数，既然能够调用函数了那正常情况下命令执行也是没有问题的了，示例代码如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> yaml</span><br><span class="line"></span><br><span class="line">content = <span class="string">'''---</span></span><br><span class="line"><span class="string">!!python/object/apply:subprocess.check_output [[ls]]</span></span><br><span class="line"><span class="string">...'''</span></span><br><span class="line"><span class="keyword">print</span> yaml.load(content)</span><br></pre></td></tr></table></figure>
+<p>运行结果如下：</p>
+<p><img src="/images/articles/2016-03-09-pyyaml-tags-parse-to-command-execution/1.png" alt=""></p>
+<p>这里只是举了一个通过 PyYAML 解析 YAML 数据来执行 <code>subprocess.check_output</code> 函数的例子，更复杂的 Payload 可以自行尝试构造。</p>
+<p>其实这里有个很严重的问题就是 PyYAML 在解析创建 Python 对象时，并没有限制函数类型的传递：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">make_python_instance</span><span class="params">(self, suffix, node,</span></span></span><br><span class="line"><span class="function"><span class="params">        args=None, kwds=None, newobj=False)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> args:</span><br><span class="line">        args = []</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> kwds:</span><br><span class="line">        kwds = &#123;&#125;</span><br><span class="line">    cls = self.find_python_name(suffix, node.start_mark)</span><br><span class="line">    <span class="keyword">if</span> newobj <span class="keyword">and</span> isinstance(cls, type(self.classobj))  \</span><br><span class="line">            <span class="keyword">and</span> <span class="keyword">not</span> args <span class="keyword">and</span> <span class="keyword">not</span> kwds:</span><br><span class="line">        instance = self.classobj()</span><br><span class="line">        instance.__class__ = cls</span><br><span class="line">        <span class="keyword">return</span> instance</span><br><span class="line">    <span class="keyword">elif</span> newobj <span class="keyword">and</span> isinstance(cls, type):</span><br><span class="line">        <span class="keyword">return</span> cls.__new__(cls, *args, **kwds)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> cls(*args, **kwds)  <span class="comment"># 如果 cls 为函数则直接进行调用</span></span><br></pre></td></tr></table></figure>
+<p>可以看到如果需要实例化的对象为函数类型，在最后会直接 <code>return cls(*args, **kwds)</code> 进行函数调用（cls 此时为 function），从而导致通过该特性可以直接调用一些危险函数。</p>
+<p>PyYAML 的 <code>load()</code> 函数为非安全的解析方法，可以解析其针对 Python 对象实现的扩展标签。但是为了防止一些情况下 YAML 数据受到控制，可以使用 <code>safe_load()</code> 函数来进行安全解析，在 <code>SafeLoader</code> 中去掉了对 Python 对象标签的支持，可以防止恶意数据造成的命令执行等问题。</p>
+<h3 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h3><p>虽然 YAML 一般不会做为用户可控的数据传递给服务器解析，但是针对 PyYAML 这种存在隐患的解析方式，应该采取默认安全解析的方式，也就是使用 <code>safe_load()</code> 作为默认的数据解析方法来禁止特有对象标签的解析。这样虽然去掉了针对 Python 对象的支持，但是一定程度上确保了安全。</p>
+<p>（不能为了便利而舍弃了安全，两者应该做到一种平衡，而不是过度倾向于某一边。）</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="https://en.wikipedia.org/wiki/YAML" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/YAML</a></li>
+<li><a href="https://www.youtube.com/watch?v=kjZHjvrAS74" target="_blank" rel="noopener">https://www.youtube.com/watch?v=kjZHjvrAS74</a></li>
+<li><a href="http://www.yaml.org/" target="_blank" rel="noopener">http://www.yaml.org/</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、Python-中处理-YAML-格式数据"><span class="toc-number">1.</span> <span class="toc-text">一、Python 中处理 YAML 格式数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、PyYAML-特有类型解析-Python-对象"><span class="toc-number">2.</span> <span class="toc-text">二、PyYAML 特有类型解析 Python 对象</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、load-和-safe-load"><span class="toc-number">3.</span> <span class="toc-text">三、load() 和 safe_load()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#四、总结"><span class="toc-number">4.</span> <span class="toc-text">四、总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&text=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&is_video=false&description=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=PyYAML 对象类型解析导致的命令执行问题&body=Check out this article: http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&title=PyYAML 对象类型解析导致的命令执行问题"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2016/03/09/pyyaml-tags-parse-to-command-execution/&name=PyYAML 对象类型解析导致的命令执行问题&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

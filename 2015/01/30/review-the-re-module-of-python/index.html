@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="使用Python大法已经有一段时间了，re正则模块却一直都还没有吃透，所以重新回顾了该模块和Python中的正则表达式。这里推荐一个在线测试正则表达式的站点-liveregex.com，对于理解正则匹配的过程是十分有帮助的。 下面详细的给出正则表达式元字符和具体语法： 一般元字符： | . | 匹配任意除换行符’\n’以外的字符，但在DOTALL模式下也可以匹配换行符| \ | 转义字符，例如当需">
+<meta name="keywords" content="python">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python re 模块回顾">
+<meta property="og:url" content="http://rickgray.me/2015/01/30/review-the-re-module-of-python/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="使用Python大法已经有一段时间了，re正则模块却一直都还没有吃透，所以重新回顾了该模块和Python中的正则表达式。这里推荐一个在线测试正则表达式的站点-liveregex.com，对于理解正则匹配的过程是十分有帮助的。 下面详细的给出正则表达式元字符和具体语法： 一般元字符： | . | 匹配任意除换行符’\n’以外的字符，但在DOTALL模式下也可以匹配换行符| \ | 转义字符，例如当需">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-04-24T15:46:33.863Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Python re 模块回顾">
+<meta name="twitter:description" content="使用Python大法已经有一段时间了，re正则模块却一直都还没有吃透，所以重新回顾了该模块和Python中的正则表达式。这里推荐一个在线测试正则表达式的站点-liveregex.com，对于理解正则匹配的过程是十分有帮助的。 下面详细的给出正则表达式元字符和具体语法： 一般元字符： | . | 匹配任意除换行符’\n’以外的字符，但在DOTALL模式下也可以匹配换行符| \ | 转义字符，例如当需">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Python re 模块回顾</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/02/27/cve-2015-2080-analysis/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2014/12/08/sctf2014-writeup/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/01/30/review-the-re-module-of-python/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&text=Python re 模块回顾"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&is_video=false&description=Python re 模块回顾"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Python re 模块回顾&body=Check out this article: http://rickgray.me/2015/01/30/review-the-re-module-of-python/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&name=Python re 模块回顾&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Python re 模块回顾
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-01-29T16:00:00.000Z" itemprop="datePublished">2015-01-30</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/python/">python</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>使用Python大法已经有一段时间了，re正则模块却一直都还没有吃透，所以重新回顾了该模块和Python中的正则表达式。这里推荐一个在线测试正则表达式的站点-<a href="https://www.liveregex.com" target="_blank" rel="noopener">liveregex.com</a>，对于理解正则匹配的过程是十分有帮助的。</p>
+<p>下面详细的给出正则表达式元字符和具体语法：</p>
+<p><strong>一般元字符</strong>：</p>
+<p>| . | 匹配任意除换行符’\n’以外的字符，但在DOTALL模式下也可以匹配换行符<br>| \ | 转义字符，例如当需要匹配点号’.’时，就需使用 . 或者字符集 [.]<br>| […] | 字符集，表示对应的位置可以是字符集中的任意字符，如果字符集以^开头，则表示匹配字符集以外的字符。所有特殊字符在字符集中都将失去原有的特殊含义</p>
+<p><strong>预定义元字符</strong>：</p>
+<p>| \d | 匹配数字 0-9 |<br>| \D | 匹配非数字 |<br>| \s | 匹配空白字符 [ \t\r\n\f\v] |<br>| \S | 匹配非空白字符 |<br>| \w | 匹配单词字符 [a-zA-Z0-9_] |<br>| \W | 匹配非单词字符 |</p>
+<p><strong>数量词元字符</strong>：</p>
+<p>| * | 匹配前一个字符0次或者多次 (<em>=0)<br>| + | 匹配前一个字符至少1次或者多次 (</em>=1)<br>| ? | 匹配前一个字符0次或者1次 (0 or 1)<br>| {m} | 匹配前一个字符m次 (m)<br>| {m,n} | 匹配前一个字符n次到m次，使用时也可以省略其中任意一个边界 (m&lt;=i&lt;=n)<br>| ? | 表示将其面的匹配模式变为非贪婪模式</p>
+<p><strong>边界元字符</strong>：</p>
+<p>| ^ | 匹配字符串的开头，多行模式中匹配每一行的开头。<br>| $ | 匹配字符穿的结尾，多行模式中匹配每一行的结尾。<br>| \A | 仅匹配字符串开头<br>| \Z | 仅匹配字符串结尾<br>| \b | 匹配\w和\W之间<br>| \B | [^\b]</p>
+<p><strong>分组</strong>：</p>
+<p>| | | 表示匹配左右表达式中任意匹配一个，顺序从左往右，一旦匹配成功则跳过匹配右边表达式<br>| (…) | 使用括号括起来的表达式作为分组，且每个分组都有相应的编号，在表达式中能直接使用分组编号<br>| (?P\<name>…) | 作用同上，但是可以自定义该分组的名字<br>| \<number> | 引用编号为&lt;number<em>的分组匹配到的字符串<br>| (?P=name) | 引用名字为&lt;name</em>的分组匹配到的字符串</number></name></p>
+<p><strong>特殊</strong>：</p>
+<p>| (?:…) | (…)的不分组形式，多用于(?:abc|edf)这种多类匹配形式<br>| (?iLmsux) | 设置表达式的匹配模式，用于表达式的开头<br>| (?#…) | 表达式中的注释，#后面的内容会被注释<br>| (?=…) | 之后的表达式需要匹配…的内容才能最终匹配成功<br>| (?!…) | 之后的表达式需要不匹配…的内容才能最终匹配成功<br>| (?&lt;=…) | 在之前的表达式需要匹配…的内容才能最终匹配成功<br>| (?&lt;!…) | 在之前的表达式需要不匹配…的内容才能最终匹配成功<br>| (?(id/name)yes-pattern|no-pattern) | 如果匹配到id/name的组字符，则需要匹配到yes-pattern，否则匹配no-pattern</p>
+<p>re模块中有4个常用的匹配函数：</p>
+<p>| match() | 始终从字符串开头开始匹配，匹配成功返回第一个匹配到的对象，否则返回None<br>| search() | 可以从字符串任意匹配，匹配成功返回第一个匹配到的对象，否则返回None<br>| findall() | 匹配字符串中所有符合正则表达式的匹配项，并以列表返回<br>| finditer() | 匹配字符串中所有符合正则表达式的匹配项，以迭代器形式返回</p>
+<p>基本上正则中的元字符已经列举完了，下面开始一些实战练习。</p>
+<p>e.g. email地址匹配：<code>([a-z0-9_\.-]+@[\da-z\.-]+\.[a-z\.]{2,20})</code></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line">s = <span class="string">'''</span></span><br><span class="line"><span class="string">Description:</span></span><br><span class="line"><span class="string">We begin by telling the parser to find the beginning of the string (^). Inside the first group, we match one or more lowercase letters, numbers, underscores, dots, or hyphens. I have escaped the dot because a non-escaped dot means any character. Directly after that, there must be an at sign. Next is the domain name which must be: one or more lowercase letters, numbers, underscores, dots, or hyphens. Then another (escaped) dot, with the extension being two to six letters or dots. I have 2 to 6 because of the country specific TLD's (.ny.us or .co.uk). Finally, we want the end of the string ($).</span></span><br><span class="line"><span class="string">String that matches:</span></span><br><span class="line"><span class="string">john@doe.com</span></span><br><span class="line"><span class="string">String that doesn't match:</span></span><br><span class="line"><span class="string">john@doe_something (TLD is too long)</span></span><br><span class="line"><span class="string">'''</span></span><br><span class="line">m = re.match(<span class="string">'^.*\s([a-z0-9_\.-]+@[\da-z\.-]+\.[a-z\.]&#123;2,20&#125;)'</span>, s, re.DOTALL)</span><br><span class="line"><span class="keyword">print</span> m.groups()</span><br></pre></td></tr></table></figure>
+<p>因为这里需要匹配的文本是多行，所以为了方便匹配进行多行匹配，这里显示使用了<code>DOTALL</code>匹配模式，使得<code>.</code>能够匹配<code>\n</code>。（若不使用多行匹配模式，则只能在正则表达式中显示的使用\s来匹配空白符）</p>
+<p>这里还要说一个需要注意的地方，在使用re模块时可能会被忽视的地方。re模块中有两个相似的函数<code>match()</code>和<code>search()</code>，在使用并无太大区别，但在匹配方式上有一点点的小差别，<code>match()</code>是从字符串的起点开始做匹配，而<code>search()</code>是从字符串做任意匹配。下面这个小例子可以说明这一点：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line">s = <span class="string">'Hello World!'</span></span><br><span class="line"><span class="keyword">print</span> re.match(<span class="string">r'e'</span>, s)</span><br></pre></td></tr></table></figure>
+<p>这里使用了<code>match()</code>函数，正则表达式并没有指定<code>e</code>字符之前的匹配，所以会匹配失败输出<code>None</code>。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line">s = <span class="string">'Hello World!'</span></span><br><span class="line"><span class="keyword">print</span> re.search(<span class="string">r'e'</span>, s)</span><br></pre></td></tr></table></figure>
+<p>这里使用了<code>search()</code>函数，正则表达式并没有指定<code>e</code>字符之前的匹配，但是由于<code>search()</code>可以从字符串做任意匹配，所以会匹配失败输出实例对象<code>&lt;_sre.SRE_Match object at 0x10e718648&gt;</code>。</p>
+<p>说了这么多，我们回到最开始的邮件匹配表达式<code>([a-z0-9_\.-]+@[\da-z\.-]+\.[a-z\.]{2,20})</code>，其中<code>[a-z0-9_\.-]+</code>匹配的是邮件地址用户名（由字母、数字、点、减号和下划线组成，只能以数字或字母开头he结尾），如果要比较严格的正则则应该为<code>[a-z0-9][a-z0-9_\.-]+[a-z0-9]</code>；<code>@</code>匹配@符号；<code>[\da-z\.-]+\.[a-z\.]{2,20}</code>匹配邮件所属域名（若想严格一点使用[a-z]作为表达式结尾，防止匹配到”<a href="mailto:rickchen.vip@gmail.com" target="_blank" rel="noopener">rickchen.vip@gmail.com</a>.”这种格式）。</p>
+<p>再来一段待匹配的文本，然后从中匹配出email地址：</p>
+<pre><code>-*&amp;*!#rickchen.vip@gmail.com=====163.com======123123%!@414842588@qq.com,root@0xfa.club
+</code></pre><p>这里使用的正则表达式为：<code>([a-z0-9][a-z0-9_\.-]+[a-z0-9]@[\da-z\.-]+\.[a-z\.]{2,20}[a-z])</code>，因为<code>match()</code>和<code>search()</code>匹配到一个就会结束匹配，所以这里使用re模块中的<code>finditer()</code>来匹配所有满足正则表达式的文本，并将它们作为迭代器返回。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line">s = <span class="string">'-*&amp;*!#rickchen.vip@gmail.com=====163.com======123123%!@414842588@qq.com,root@0xfa.club'</span></span><br><span class="line"><span class="keyword">for</span> m <span class="keyword">in</span> re.finditer(<span class="string">r'([a-z0-9][a-z0-9_\.-]+[a-z0-9]@[\da-z\.-]+\.[a-z\.]&#123;2,20&#125;[a-z])'</span>, s):</span><br><span class="line">    <span class="keyword">print</span> m.group()</span><br></pre></td></tr></table></figure>
+<p>代码输出结果为：</p>
+<pre><code>rickchen.vip@gmail.com
+414842588@qq.com
+root@0xfa.club
+</code></pre><p>下面使用自定义名字分组来分别获取：email地址、email用户名、email所属域名。在Python里面指定分组名称表达式为<code>(?P&lt;name&gt;...)</code>，所以表达式在原有的基础上做一点分组命名处理：</p>
+<pre><code>(?P&lt;email&gt;(?P&lt;username&gt;[a-z0-9][a-z0-9_\.-]+[a-z0-9])@(?P&lt;domain&gt;[\da-z\.-]+\.[a-z\.]{2,20}[a-z]))
+</code></pre><p>更改代码；</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line">s = <span class="string">'-*&amp;*!#rickchen.vip@gmail.com=====163.com======123123%!@414842588@qq.com,root@0xfa.club'</span></span><br><span class="line"><span class="keyword">for</span> m <span class="keyword">in</span> re.finditer(<span class="string">r'(?P&lt;email&gt;(?P&lt;username&gt;[a-z0-9][a-z0-9_\.-]+[a-z0-9])@(?P&lt;domain&gt;[\da-z\.-]+\.[a-z\.]&#123;2,20&#125;[a-z]))'</span>, s):</span><br><span class="line">    <span class="keyword">print</span> <span class="string">'Email: "%s" (Username: "%s", Domain: "%s")'</span> % (m.group(<span class="string">'email'</span>), m.group(<span class="string">'username'</span>), m.group(<span class="string">'domain'</span>))</span><br></pre></td></tr></table></figure>
+<p>代码输出结果为：</p>
+<pre><code>Email: &quot;rickchen.vip@gmail.com&quot; (Username: &quot;rickchen.vip&quot;, Domain: &quot;gmail.com&quot;)
+Email: &quot;414842588@qq.com&quot; (Username: &quot;414842588&quot;, Domain: &quot;qq.com&quot;)
+Email: &quot;root@0xfa.club&quot; (Username: &quot;root&quot;, Domain: &quot;0xfa.club&quot;)
+</code></pre><p>这里也可以不使用m.group(‘email’)来获取<code>email</code>分组的值，可以使用<code>groupdict()</code>返回一个以别名为键值的字典（没有设置别名的不包含在内）。e.g.<code>m.groupdict()[&#39;email&#39;]</code>为匹配到的<code>email</code>分组的值。</p>
+<p>上面是一个简单的email地址匹配的例子，下面给一个简单的匹配html闭合标签的例子。</p>
+<p>这里有一段html文本，为了演示方便将其融为一行：</p>
+<pre><code>&lt;div&gt;&lt;h1&gt;Hello World!&lt;/h1&gt;&lt;a href=&quot;http://rickgray.me&quot;&gt;rickgray.me&lt;/a&gt;&lt;div&gt;&lt;p&gt;This is testing!&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;
+</code></pre><p>闭合标签指的是，<tag>…</tag>成对出现的标签，像<code>&lt;div&gt;...&lt;/div&gt;</code>、<code>&lt;h1&gt;...&lt;/h1&gt;</code>、<code>&lt;a&gt;...&lt;/a&gt;</code>这些都属于闭合类型的标签，因为闭合标签成对出现所以一个简单的正则表达式可以这样写：<code>&lt;(?P&lt;tag&gt;[^&gt;]+)&gt;(?P&lt;value&gt;.*)&lt;/(?P=tag)&gt;</code>，看下面这段代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line">s = <span class="string">'&lt;div&gt;&lt;h1&gt;Hello World!&lt;/h1&gt;&lt;a href="http://rickgray.me"&gt;rickgray.me&lt;/a&gt;&lt;div&gt;&lt;p&gt;This is testing!&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;'</span></span><br><span class="line">m = re.search(<span class="string">r'&lt;(?P&lt;tag&gt;[^&gt;]+)&gt;(?P&lt;value&gt;.*)&lt;/(?P=tag)&gt;'</span>, s)</span><br><span class="line"><span class="keyword">if</span> m:</span><br><span class="line">    <span class="keyword">print</span> <span class="string">'Tag: "%s"'</span> % m.group(<span class="string">'tag'</span>)</span><br><span class="line">    <span class="keyword">print</span> <span class="string">'Value: "%s"'</span> % m.group(<span class="string">'value'</span>)</span><br></pre></td></tr></table></figure>
+<p>代码输出结果为：</p>
+<pre><code>Tag: &quot;div&quot;
+Value: &quot;&lt;h1&gt;Hello World!&lt;/h1&gt;&lt;a href=&quot;http://rickgray.me&quot;&gt;rickgray.me&lt;/a&gt;&lt;div&gt;&lt;p&gt;This is testing!&lt;/p&gt;&lt;/div&gt;&quot;
+</code></pre><p>这里可以更完善一点的使用<code>&lt;(?P&lt;tag&gt;[^&gt;]+)\b[^&gt;]*&gt;(?P&lt;value&gt;.*)&lt;/(?P=tag)&gt;</code>来匹配像<code>&lt;a href=&quot;http://rickgray.me&quot;&gt;rickgray.me&lt;/a&gt;</code>这种含有属性的标签。在匹配标签值是使用的是贪婪模式<code>.*</code>而不是非贪婪模式<code>.*?</code>，如果这里使用非贪婪模式则输出结果则应该为（以第一个作为结束标志，并不是正确的）：</p>
+<pre><code>Tag: &quot;div&quot;
+Value: &quot;&lt;h1&gt;Hello World!&lt;/h1&gt;&lt;a href=&quot;http://rickgray.me&quot;&gt;rickgray.me&lt;/a&gt;&lt;div&gt;&lt;p&gt;This is testing!&lt;/p&gt;&quot;
+</code></pre><p>这里可以写个递归匹配闭合标签的函数<code>get_tags()</code>，如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_tags</span><span class="params">(s, d=<span class="number">0</span>)</span>:</span></span><br><span class="line">    tag_regex = <span class="string">r'&lt;(?P&lt;tag&gt;[^&gt;]+)\b[^&gt;]*&gt;(?P&lt;value&gt;.*)&lt;/(?P=tag)&gt;'</span></span><br><span class="line">    <span class="keyword">for</span> m <span class="keyword">in</span> re.finditer(tag_regex, s, re.DOTALL):</span><br><span class="line">        <span class="keyword">print</span> <span class="string">' '</span>*d,<span class="string">'%s ==&gt; %s'</span> % (m.group(<span class="string">'tag'</span>), m.group(<span class="string">'value'</span>))</span><br><span class="line">        get_tags(m.group(<span class="string">'value'</span>), d+<span class="number">4</span>)</span><br></pre></td></tr></table></figure>
+<p>这里重新找段测试html文本，将其保存为<code>demo.txt</code>：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE HTML&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">"zh"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"utf-8"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Home - Quiet And Powerful<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"container"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"left-col"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">header</span> <span class="attr">id</span>=<span class="string">"header"</span> <span class="attr">class</span>=<span class="string">"inner"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h1</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"/"</span>&gt;</span>Quiet And Powerful<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">header</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"mid-col"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"mid-col-container"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">h2</span> <span class="attr">class</span>=<span class="string">"year"</span>&gt;</span>2014<span class="tag">&lt;/<span class="name">h2</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">li</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">h3</span> <span class="attr">class</span>=<span class="string">"title"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"/2014/12/08/sctf2014-writeup.html"</span>&gt;</span>SCTF2014 Writeup<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">h3</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">footer</span> <span class="attr">id</span>=<span class="string">"footer"</span> <span class="attr">class</span>=<span class="string">"inner"</span>&gt;</span><span class="tag">&lt;<span class="name">p</span>&gt;</span></span><br><span class="line">            Copyright &amp;copy; 2015</span><br><span class="line">        <span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">footer</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>下面是测试代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_tags</span><span class="params">(s, d=<span class="number">0</span>)</span>:</span></span><br><span class="line">    tag_regex = <span class="string">r'&lt;(?P&lt;tag&gt;[^&gt;]+)\b[^&gt;]*&gt;(?P&lt;value&gt;.*)&lt;/(?P=tag)&gt;'</span></span><br><span class="line">    <span class="keyword">for</span> m <span class="keyword">in</span> re.finditer(tag_regex, s, re.DOTALL):</span><br><span class="line">        <span class="keyword">print</span> <span class="string">' '</span>*d,<span class="string">'[[%s]] ==&gt; "%s"'</span> % (m.group(<span class="string">'tag'</span>), m.group(<span class="string">'value'</span>))</span><br><span class="line">        get_tags(m.group(<span class="string">'value'</span>), d+<span class="number">4</span>)</span><br><span class="line"></span><br><span class="line">content = open(<span class="string">'demo.txt'</span>, <span class="string">'r'</span>).read()</span><br><span class="line"></span><br><span class="line">get_tags(content)</span><br></pre></td></tr></table></figure>
+<p>代码输出太多这里就不贴出来了，可以亲手实践一下。这里的递归闭合标签的函数<code>get_tags()</code>并不是很完善，还存在着一些bug，可以对其进行完善，甚至DIY一个html解析器出来。</p>
+<p>对于re的回顾暂时就这么多了，正则想要学好最重要的就是多练习多实践。：）</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/01/30/review-the-re-module-of-python/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&text=Python re 模块回顾"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&is_video=false&description=Python re 模块回顾"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Python re 模块回顾&body=Check out this article: http://rickgray.me/2015/01/30/review-the-re-module-of-python/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&title=Python re 模块回顾"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/01/30/review-the-re-module-of-python/&name=Python re 模块回顾&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

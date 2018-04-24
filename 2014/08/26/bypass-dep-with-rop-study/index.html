@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="一、前言上周去参加了ISCC竞赛，在比赛的时候由于自己专于渗透方向的题目而忽略了RE、PWN等题导致最终成绩不太理想（后来看了下PWN，才发现原来那么简单，太可惜了！），赛后本地搭环境对赛中的两道PWN题进行了分析，并且写出了相应的exp，在这里就不再多分析了。因为自己RE、PWN的水平也甚是一般，什么DEP、ASLR等windows下的防护措施也只是听说而已，从来都没有去仔细地了解和分析果，所以">
+<meta name="keywords" content="windows,security">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ROP 技术绕过 DEP 初学习">
+<meta property="og:url" content="http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="一、前言上周去参加了ISCC竞赛，在比赛的时候由于自己专于渗透方向的题目而忽略了RE、PWN等题导致最终成绩不太理想（后来看了下PWN，才发现原来那么简单，太可惜了！），赛后本地搭环境对赛中的两道PWN题进行了分析，并且写出了相应的exp，在这里就不再多分析了。因为自己RE、PWN的水平也甚是一般，什么DEP、ASLR等windows下的防护措施也只是听说而已，从来都没有去仔细地了解和分析果，所以">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/111-e1408992619685.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/112-e1408991885720.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/113-e1408991847762.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/114-e1408991912914.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/115-e1408991936804.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/116-e1408992646908.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/117-e1408992028333.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/118-e1408992055542.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/1201-e1408992591802.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/120-e1408992095518.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/121-e1408992126918.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/122-e1408992192649.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/123-e1408992720997.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/124-e1408992298534.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/125-e1408992322552.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/126-e1408992344343.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/127-e1408992369637.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/128-e1408992392779.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/129-e1408992417574.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/130-e1408992437204.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ROP 技术绕过 DEP 初学习">
+<meta name="twitter:description" content="一、前言上周去参加了ISCC竞赛，在比赛的时候由于自己专于渗透方向的题目而忽略了RE、PWN等题导致最终成绩不太理想（后来看了下PWN，才发现原来那么简单，太可惜了！），赛后本地搭环境对赛中的两道PWN题进行了分析，并且写出了相应的exp，在这里就不再多分析了。因为自己RE、PWN的水平也甚是一般，什么DEP、ASLR等windows下的防护措施也只是听说而已，从来都没有去仔细地了解和分析果，所以">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2014-08-26-bypass-dep-with-rop-study/111-e1408992619685.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>ROP 技术绕过 DEP 初学习</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2014/11/10/hctf2014-writeup/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2014/08/25/the-remote-injection-of-dll-injection/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&text=ROP 技术绕过 DEP 初学习"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&is_video=false&description=ROP 技术绕过 DEP 初学习"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ROP 技术绕过 DEP 初学习&body=Check out this article: http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&name=ROP 技术绕过 DEP 初学习&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、前言"><span class="toc-number">1.</span> <span class="toc-text">一、前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、DEP与ROP"><span class="toc-number">2.</span> <span class="toc-text">二、DEP与ROP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、实践测试"><span class="toc-number">3.</span> <span class="toc-text">三、实践测试</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1、没有DEP保护，成功溢出"><span class="toc-number">3.1.</span> <span class="toc-text">1、没有DEP保护，成功溢出</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、开启DEP保护，溢出失败"><span class="toc-number">3.2.</span> <span class="toc-text">2、开启DEP保护，溢出失败</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3、利用ROP绕过DEP执行shellcode"><span class="toc-number">3.3.</span> <span class="toc-text">3、利用ROP绕过DEP执行shellcode</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        ROP 技术绕过 DEP 初学习
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2014-08-25T16:00:00.000Z" itemprop="datePublished">2014-08-26</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/security/">security</a>, <a class="tag-link" href="/tags/windows/">windows</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h3 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h3><p>上周去参加了ISCC竞赛，在比赛的时候由于自己专于渗透方向的题目而忽略了RE、PWN等题导致最终成绩不太理想（后来看了下PWN，才发现原来那么简单，太可惜了！），赛后本地搭环境对赛中的两道PWN题进行了分析，并且写出了相应的exp，在这里就不再多分析了。<br>因为自己RE、PWN的水平也甚是一般，什么DEP、ASLR等windows下的防护措施也只是听说而已，从来都没有去仔细地了解和分析果，所以在这里也算是一个简单的学习笔记了吧。</p>
+<p>下面就说说利用ROP技术绕过DEP的简单实践。</p>
+<h3 id="二、DEP与ROP"><a href="#二、DEP与ROP" class="headerlink" title="二、DEP与ROP"></a>二、DEP与ROP</h3><p>DEP（Data Execution Prevention）意为数据执行保护，是Windows的一项安全机制，主要能够在内存上执行额外检查以帮助防止在系统上运行恶意代码，简单的说也就是以前直接将shellcode插入到堆栈中执行的方法已经不可行了，因为在开启DEP后，堆栈上的shellcode默认不可执行，因此也就不能使用以前的技术来成功exp了。</p>
+<p>DEP工作状态可分为四种：</p>
+<ul>
+<li>Optin：默认仅将DEP保护应用于Windows系统服务和组件，对其他程序不予保护。</li>
+<li>Optout：为排除列表程序外的所有程序和服务启用DEP。</li>
+<li>AlwaysOn：对所有进程启用DEP的保护，不存在排除列表，此模式下DEP不可被关闭，该模式只能工作在64位的操作系统上。</li>
+<li>AlwaysOff：对所有进程都禁用DEP，此模式下DEP不能被动态开启。</li>
+</ul>
+<p>那么如何绕过DEP保护从而执行置于堆栈中的攻击代码？ROP就是绕过DEP保护技术之一。</p>
+<p>ROP（Return-oriented Programming），通过从已有的库或可执行文件中提取代码片段，构建恶意代码。<br>ROP技术其实是通过从已有的库或可执行文件中提取代码片段（汇编指令＋retn指令），将所有的代码片段组合在一起构成ROP链，从而完成特定的功能来绕过DEP（通常是调用系统API来关闭DEP的保护，然后再转到shellcode执行）。</p>
+<p>ROP链由一个个ROP小配件组成，ROP小配件由 “汇编指令＋retn指令” 组成。比如现在有个ROP小配件想实现<code>pop ebx</code>，那么这个小配件的指令就应该为 <code>pop ebx; retn;</code>，这是去系统内存中寻找，假设找到<code>0x77c23436</code>处恰好就是<code>pop ebx; retn;</code>，那么这个小配件就是：<code>0x77c23436</code>。</p>
+<h3 id="三、实践测试"><a href="#三、实践测试" class="headerlink" title="三、实践测试"></a>三、实践测试</h3><p>测试环境：WindowsXP sp3，shellcode（ISCC2014 PWN1），Immnunity Debugger。</p>
+<p>实验简介：shellcode.exe是我在参加ISCC2014的线下个人赛时做过的一道PWN题目，程序在启动时会在本地1000端口绑定socket并进行接听，当有用户连接并且用户发送大于64bytes的数据时，堆栈会发生溢出，从而产生exp。</p>
+<p>首先，我们在不开启DEP保护的情况下，在XP上成功溢出并getshell（反弹）。接着，开启DEP保护，看能否成功溢出；最后，使用ROP技术绕过DEP，在开启DEP保护的情况下成功溢出。</p>
+<h4 id="1、没有DEP保护，成功溢出"><a href="#1、没有DEP保护，成功溢出" class="headerlink" title="1、没有DEP保护，成功溢出"></a>1、没有DEP保护，成功溢出</h4><p>在WindowsXP sp3中，默认以Optin方式开启DEP，即仅将DEP保护应用于Windows系统服务和组件，对其他程序不予保护。shellcode.exe是用户进程，自然也不会受到DEP保护。下面我们直运行shellcode.exe（exp事先已经准备好）：</p>
+<p>（DEP设置）</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/111-e1408992619685.png" alt="img"></p>
+<p>首先我们在主机上进行nc监听，等待shell反弹</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/112-e1408991885720.png" alt="img"></p>
+<p>然后在虚拟机里运行shellcode.exe程序，并通过准备好的exp进行溢出</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/113-e1408991847762.png" alt="img"></p>
+<p>（成功执行exp）</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/114-e1408991912914.png" alt="img"></p>
+<p>然后看看shell是否有反弹成功</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/115-e1408991936804.png" alt="img"></p>
+<p>（可以看到，在不开启DEP的情况下，通过溢出exp，已经成功得到反弹的shell）</p>
+<h4 id="2、开启DEP保护，溢出失败"><a href="#2、开启DEP保护，溢出失败" class="headerlink" title="2、开启DEP保护，溢出失败"></a>2、开启DEP保护，溢出失败</h4><p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/116-e1408992646908.png" alt="img"></p>
+<p>设置好后，重启电脑，再次运行shellcode.exe，可以看到出错了</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/117-e1408992028333.png" alt="img"></p>
+<p>使用OD进行调试，可以看到我们是成功溢出了并且执行了<code>JMP ESP (0x7ffa4512)</code></p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/118-e1408992055542.png" alt="img"></p>
+<p>从上图中可以知道，在DEP开启的情况下是溢出成功了，但是由于shellcode处在堆栈中，由于DEP的保护，因此并不能触发执行，因而报错。</p>
+<p>那么，在这种情况下，如何才能执行堆栈上的shellcode呢？那就可以用到ROP链了。</p>
+<p>绕过DEP的方法能大致分为两种：</p>
+<ul>
+<li><p>新建可执行内存区域，将shellcode复制进去；相关函数：<code>VirtualAlloc()</code>、<code>HeapCreate()</code>、<code>WriteProcessMemory()</code></p>
+</li>
+<li><p>通过系统API关掉DEP保护；相关函数：<code>SetProcessDEPPolicy()</code>、<code>NtSetInformationProccess()</code>、<code>VirtualProtect()</code></p>
+</li>
+</ul>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/1201-e1408992591802.png" alt="img"></p>
+<p>(1) ＝ don’t exist</p>
+<p>(2) ＝ will fail because of default DEP policy settings</p>
+<p>ROP链的作用就是用一连串的ROP小配件来实现这些函数的调用关闭DEP保护，然后转到shellcode上执行，下面通过一个简单的例子来说明如何利用ROP技术来绕过DEP执行shellcode。</p>
+<h4 id="3、利用ROP绕过DEP执行shellcode"><a href="#3、利用ROP绕过DEP执行shellcode" class="headerlink" title="3、利用ROP绕过DEP执行shellcode"></a>3、利用ROP绕过DEP执行shellcode</h4><p>因为SetProcessDEPPolicy函数简单且ROP链构建相对容易，所有我们就构建ROP链来调用SetProcessDEPPolicy函数关闭DEP保护，然后专向我们shellcode执行。</p>
+<p>上面已经提到，ROP链是有许多ROP小配件构造，那么我们如何快速地找到相应的小配件来构成链呢？这里就要说说Immunity Debugger上的一个python模块－<a href="http://redmine.corelan.be/projects/mona" target="_blank" rel="noopener">mona.py</a>。通过使用该模块，我们可以非常迅速地找到我们所需要各种小配件，如果没有对应的小配件，还可以通过各种变幻由其他小配件组合来达到相应的功能。</p>
+<p>下面简单的介绍一下如何使用mona.py搜索ROP小配件。</p>
+<p>这里以我们的测试程序shellcode.exe为例，使用Immunity Debugger载入 ”shellcode.exe” ，然后可以查看当前程序加载的可执行模块，如下图</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/120-e1408992095518.png" alt="img"></p>
+<p>在左下命令行处输入如下命令可以在对应的模块中查找（此处指在 ”kernel32.dll” 中进行扫描）：</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/121-e1408992126918.png" alt="img"></p>
+<p>查找完成后，会在IM Debugger的安装目录下生成报表文件，我们打开 “rop_chain.txt” 进行查看，找到SetProcessDEPPolicy的ROP链说明处：</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/122-e1408992192649.png" alt="img"></p>
+<p>前面已经说过，我们构造ROP链是为了调用<code>SetProcessDEPPolicy()</code>关闭DEP，然后转到shellcode执行。其实整个ROP链的最终构造结果是构造出一个特定的寄存器结果，就像上图所示的一样，为什么呢？这里有个比较特别的地方，我们知道 “PUSHAD” 是依次将EAX、ECX、EDX…ESI、EDI入栈，那么当我们通过ROP链构造好各个寄存器并通过小配件 “PUSHAD RETN” 后，此时堆栈的结构大概就是这个样子的：</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/123-e1408992720997.png" alt="img"></p>
+<p>这里可以看到，入栈前我们将EDI和ESI的值存储为 “RETN指令” 的地址，然后会执行EBP处的SetProcessDEPPolicy函数，因为<code>PUSHAD RETN</code>小配件在shellcode的上一个位置，执行完后ESP会指向shellcode，当SetProcessDEPPolicy执行完毕后会直接转到我们shellcode处执行（此时已经通过调用<code>SetProcessDEPPolicy()</code>取消DEP保护了）。</p>
+<p>经过分析可以看到我们构造具体的ROP链：</p>
+<pre><code>0x????????,  # POP EBP # RETN
+0x????????,  # ptr SetProcessDEPPolicy（ “SetProcessDEPPolicy“的指针）
+0x????????,  # POP EBX # RETN
+0x00000000,  # dwFlags
+0x????????,  # POP EDI # RETN
+0x????????,  # ptr RETN（ “retn指令” 的地址）
+0x????????,  # POP ESI # RETN
+0x????????,  # ptr RETN（ ”retn指令“ 的地址）
+0x????????,  # PUSHAD # RETN
+</code></pre><p>上面的问号代表我们需要寻找的ROP小配件的地址，这里给出几个小配件的寻找方法即可（其他同理），这里还要指出一个问题，很多时候我们需要的小配件不一定能在当前程序的执行模块中直接找到，但是我们可以通过其他方法来实现，比如我想使得EBX为0x00000000，我们可以先找到<code>POP EBX; RETN;</code>将EBX先赋值为0xffffffff，然后在找到<code>INC EBX; RETN;</code>，这样两个小配件合在一起执行达到了我们的目的。</p>
+<p><strong># POP EBP # RETN 小配件的寻找</strong></p>
+<p>其实，刚才通过执行mona.py已经在IM Debugger安装目录下记录了一些小配件的地址，打开rops.txt，通过查找我们可以找到在<code>0x7c87f30f</code>处找到我们想要的ROP小配件</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/124-e1408992298534.png" alt="img"></p>
+<p><strong># RETN 小配件</strong></p>
+<p>这里，我们可以重新在IM Debugger中利用mona.py模块来进行特定指令的查找，<code>retn</code>指令的机器码为<code>\xc3</code>，我们在命令行中输入：</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/125-e1408992322552.png" alt="img"></p>
+<p>命令执行完成后，结果会在IM Debugger安装目录下find.exe文件中，如下图所示</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/126-e1408992344343.png" alt="img"></p>
+<p>我们可以选择其中几个作为我们 “RETN” 小配件。</p>
+<p>其他小配件的寻找这里就不多说了（同理），这里需要注意的是，在找ROP小配件时，若遇到RETN 0x??这种指令，此时我们需要往我们ROP链中插入与 RETN ＋0x?? 相同字节的无用数据，不然ROP链不能按预期的顺序执行，甚至导致ROP链出错。</p>
+<p>下面就是我通过mona.py找到的各个ROP小配件构成的ROP链：</p>
+<pre><code>0x77bf4f42,   # RETN
+0x90909090,
+0x7c80df32,   # POP EBP # RETN
+0x7c862144,   # ptr to SetProccessDEPPolicy()
+0x7c81ae28,   # POP EBX # RETN [kernel32.dll]
+0x00000000,   # 0x00000000（dwFlags）
+0x7c86ce63,   # POP EDI # RETN [kernel32.dll] 
+0x77bf54c4,   # ptr RETN
+0x7c87b976,   # POP ESI # RETN [msvcrt.dll]
+0x77bf5502,   # ptr RETN
+0x77d23ad9,   # PUSHAD # RETN [user32.dll]
+</code></pre><p>因为shellcode.exe在溢出点函数返回时是<code>RETN 0x04</code>，因此我加入了前两个ROP小配件进行过渡，使得整个ROP链能够串起来。</p>
+<p>下面我们将我们构造的ROP链与最开始的exp重新结合一下，构成新的exp（利用ROP绕过DEP）。</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/127-e1408992369637.png" alt="img"></p>
+<p>然后，我们在系统开启DEP保护的情况下，使用新的exp进行溢出尝试</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/128-e1408992392779.png" alt="img"></p>
+<p>执行exp</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/129-e1408992417574.png" alt="img"></p>
+<p>可以看到使用新的exp已经成功getshell了</p>
+<p><img src="/images/articles/2014-08-26-bypass-dep-with-rop-study/130-e1408992437204.png" alt="img"></p>
+<p>至此整个实验就完了，我们使用ROP链成功DEP使得我们的shellcode执行，具体的调试过程这里就不过多演示了，后面有该测试程序的链接，有兴趣的同学可以自己手动实践一下，我也是彩笔一抹，互相学习！</p>
+<p>（测试程序打包：<a href="http://pan.baidu.com/s/1c0vkGpU" target="_blank" rel="noopener">http://pan.baidu.com/s/1c0vkGpU</a>）</p>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、前言"><span class="toc-number">1.</span> <span class="toc-text">一、前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、DEP与ROP"><span class="toc-number">2.</span> <span class="toc-text">二、DEP与ROP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、实践测试"><span class="toc-number">3.</span> <span class="toc-text">三、实践测试</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1、没有DEP保护，成功溢出"><span class="toc-number">3.1.</span> <span class="toc-text">1、没有DEP保护，成功溢出</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、开启DEP保护，溢出失败"><span class="toc-number">3.2.</span> <span class="toc-text">2、开启DEP保护，溢出失败</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3、利用ROP绕过DEP执行shellcode"><span class="toc-number">3.3.</span> <span class="toc-text">3、利用ROP绕过DEP执行shellcode</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&text=ROP 技术绕过 DEP 初学习"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&is_video=false&description=ROP 技术绕过 DEP 初学习"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=ROP 技术绕过 DEP 初学习&body=Check out this article: http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&title=ROP 技术绕过 DEP 初学习"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2014/08/26/bypass-dep-with-rop-study/&name=ROP 技术绕过 DEP 初学习&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+

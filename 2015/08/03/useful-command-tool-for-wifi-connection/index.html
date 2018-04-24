@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="最近网购了一套Raspberry-Pi2，用来跑一些神秘脚本。因为树莓派是基于 ARM 架构的，所以给它装上了 Ubuntu专版，对于终端下基本的 iwconfig 命令可能对现代的多种加密方式的 wifi 已经不太适应了，取而代之的是支持多种加密方式（WEP, WPA and WPA2等）的 wpa_supplicant 更符合我的需求。 一、安装Debian/Ubuntu 下直接使用 sudo">
+<meta name="keywords" content="linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="wpa_supplicant - 强有力的终端 wifi 配置工具">
+<meta property="og:url" content="http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/index.html">
+<meta property="og:site_name" content="rickgray.me">
+<meta property="og:description" content="最近网购了一套Raspberry-Pi2，用来跑一些神秘脚本。因为树莓派是基于 ARM 架构的，所以给它装上了 Ubuntu专版，对于终端下基本的 iwconfig 命令可能对现代的多种加密方式的 wifi 已经不太适应了，取而代之的是支持多种加密方式（WEP, WPA and WPA2等）的 wpa_supplicant 更符合我的需求。 一、安装Debian/Ubuntu 下直接使用 sudo">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-1.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-3.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-4.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-5.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-6.png">
+<meta property="og:updated_time" content="2018-04-24T15:48:57.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="wpa_supplicant - 强有力的终端 wifi 配置工具">
+<meta name="twitter:description" content="最近网购了一套Raspberry-Pi2，用来跑一些神秘脚本。因为树莓派是基于 ARM 架构的，所以给它装上了 Ubuntu专版，对于终端下基本的 iwconfig 命令可能对现代的多种加密方式的 wifi 已经不太适应了，取而代之的是支持多种加密方式（WEP, WPA and WPA2等）的 wpa_supplicant 更符合我的需求。 一、安装Debian/Ubuntu 下直接使用 sudo">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-1.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>wpa_supplicant - 强有力的终端 wifi 配置工具</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2015/08/07/use-gdb-to-study-got-and-plt/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2015/07/31/discuz-all-version-stored-xss-analysis/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&text=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&is_video=false&description=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=wpa_supplicant - 强有力的终端 wifi 配置工具&body=Check out this article: http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&name=wpa_supplicant - 强有力的终端 wifi 配置工具&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、安装"><span class="toc-number">1.</span> <span class="toc-text">一、安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、配置并使用"><span class="toc-number">2.</span> <span class="toc-text">二、配置并使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">3.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        wpa_supplicant - 强有力的终端 wifi 配置工具
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">rickgray.me</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2015-08-02T16:00:00.000Z" itemprop="datePublished">2015-08-03</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/linux/">linux</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>最近网购了一套<a href="https://www.raspberrypi.org/blog/raspberry-pi-2-on-sale/" target="_blank" rel="noopener">Raspberry-Pi2</a>，用来跑一些神秘脚本。因为树莓派是基于 ARM 架构的，所以给它装上了 <a href="https://wiki.ubuntu.com/ARM/RaspberryPi" target="_blank" rel="noopener">Ubuntu专版</a>，对于终端下基本的 <code>iwconfig</code> 命令可能对现代的多种加密方式的 wifi 已经不太适应了，取而代之的是支持多种加密方式（WEP, WPA and WPA2等）的 <code>wpa_supplicant</code> 更符合我的需求。</p>
+<h3 id="一、安装"><a href="#一、安装" class="headerlink" title="一、安装"></a>一、安装</h3><p>Debian/Ubuntu 下直接使用 <code>sudo apt-get install wpa_supplicant</code> 来进行安装，CentOS 下使用 <code>sudo yum install wpa_supplicant</code> 来安装。</p>
+<h3 id="二、配置并使用"><a href="#二、配置并使用" class="headerlink" title="二、配置并使用"></a>二、配置并使用</h3><p>使用 <code>iwconfig</code> 命令来查看当前机器上被识别出来的无线设备，例如这里我的树莓派上插入了一块腾达的USB无线网卡，则在系统中会得到识别。</p>
+<p><img src="/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-1.png" alt=""></p>
+<p>然后在 <code>/etc/wpa_supplicant/</code> 目录下或者其它目录建立一个 wifi 的配置文件 <code>example.conf</code>，这里我创建在 <code>/etc/wpa_supplicant/example.conf</code>，并写入如下配置内容：</p>
+<pre><code>ctrl_interface=/run/wpa_supplicant
+update_config=1
+</code></pre><p>这样配置是为了后面可以使用 <code>wpa_cli</code> 命令来实时地扫描和配置网络，并能狗保存配置信息。</p>
+<p>配置文件建立完毕后，运行 <code>wpa_supplicant</code> 命令来启动无线网络接口，并加载相关配置文件。</p>
+<pre><code>sudo wpa_supplicant -B -D nl80211 -i wlan0 -c /etc/wpa_supplicant/example.conf
+</code></pre><p><img src="/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-2.png" alt=""></p>
+<p>可以看到提示初始化成功，<code>-B</code>参数表示后台运行。如果遇到驱动不支持所插入的无线网卡，可选择<code>wired</code>或者<code>wext</code>等，具体详情可使用 <code>wpa_supplicant -h</code> 进行查看。</p>
+<p>初始化完毕后，即可运行 <code>sudo wpa_cli</code> 来实时地配置网络。进入 <code>wpa_cli</code> 的交互界面后，它会自动地扫描周围的无线网络，你也可以使用 <code>scan</code> 命令进行手动扫描：</p>
+<p><img src="/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-3.png" alt=""></p>
+<p>扫描完成后，使用 <code>scan_result</code> 打印扫描结果，选择你要连接的无线网络的 SSID（名称），然后新建一个网络配置信息（0代表了配置编号）：</p>
+<pre><code>&gt; add_network
+</code></pre><p>然后对编号为 <code>1</code> 的网络配置信息进行设置：</p>
+<pre><code>&gt; set_network 1 ssid &quot;Wifi名称&quot;
+&gt; set_network 1 psk &quot;Wifi密码&quot;
+&gt; set_network 1 key_mgmt &quot;Wifi的加密方式（WPA-PSK/WPA2-PSK）&quot;
+</code></pre><p>设置好后，即可使用 <code>enable_network 1</code> 来启用该配置并使用 <code>save_config</code> 来保存当前配置至 <code>/etc/wpa_supplicant/example.conf</code>。</p>
+<p><img src="/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-4.png" alt=""></p>
+<p>这是可以再次使用 <code>iwconfig</code> 命令来查看无线网卡信息，可以看到已经连接上了对应的 Wifi 并有了相应的信息。</p>
+<p><img src="/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-5.png" alt=""></p>
+<p>一般 Wifi 的 IP 地址获取都使用了 DHCP 协议，因此我们还需要手动 <code>dhclient wlan0</code> 来自动协商获取 IP 地址。</p>
+<p><img src="/images/articles/2015-08-03-useful-command-tool-for-wifi-connection/r-6.png" alt=""></p>
+<p>下次启动时可以直接使用现有配置来对之前的 Wifi 进行连接，当然不要忘了使用相应命令来进行 DCHP 协商获取 IP 地址。</p>
+<pre><code>sudo wpa_supplicant -B -D nl80211 -i wlan0 -c /etc/wpa_supplicant/example.conf
+sudo dhclient wlan0
+</code></pre><p>至此就大功告成了，终端下连接 Wifi 就是这么简单 :)</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><ul>
+<li><a href="https://wiki.archlinux.org/index.php/WPA_supplicant" target="_blank" rel="noopener">https://wiki.archlinux.org/index.php/WPA_supplicant</a></li>
+<li><a href="https://wiki.ubuntu.com/ARM/RaspberryPi" target="_blank" rel="noopener">https://wiki.ubuntu.com/ARM/RaspberryPi</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、安装"><span class="toc-number">1.</span> <span class="toc-text">一、安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、配置并使用"><span class="toc-number">2.</span> <span class="toc-text">二、配置并使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考"><span class="toc-number">3.</span> <span class="toc-text">参考</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&text=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&is_video=false&description=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=wpa_supplicant - 强有力的终端 wifi 配置工具&body=Check out this article: http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&title=wpa_supplicant - 强有力的终端 wifi 配置工具"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://rickgray.me/2015/08/03/useful-command-tool-for-wifi-connection/&name=wpa_supplicant - 强有力的终端 wifi 配置工具&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2018 RickGray
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/archives/">Archives</a></li>
+         
+          <li><a href="http://github.com/RickGray">Projects</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
