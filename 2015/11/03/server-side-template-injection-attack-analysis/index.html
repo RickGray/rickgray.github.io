@@ -14,14 +14,16 @@
 <meta property="og:site_name" content="rickgray.me">
 <meta property="og:description" content="在今年的黑帽大会上 James Kettle 讲解了 《Server-Side Template Injection: RCE for the modern webapp》，从服务端模板注入的形成到检测，再到验证和利用都进行了详细的介绍。本文在理解原文内容的基础上，结合更为具体的示例对服务端模板注入的原理和扫描检测方法做一个浅析。 一、模板注入与常见Web注入就注入类型的漏洞来说，常见 Web 注">
 <meta property="og:locale" content="default">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/1.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/2.png">
+<meta property="og:image" content="http://rickgray.me/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/3.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/4.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/5.png">
-<meta property="og:updated_time" content="2018-04-24T15:58:01.570Z">
+<meta property="og:updated_time" content="2018-04-24T17:55:42.287Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="服务端模板注入攻击 (SSTI) 之浅析">
 <meta name="twitter:description" content="在今年的黑帽大会上 James Kettle 讲解了 《Server-Side Template Injection: RCE for the modern webapp》，从服务端模板注入的形成到检测，再到验证和利用都进行了详细的介绍。本文在理解原文内容的基础上，结合更为具体的示例对服务端模板注入的原理和扫描检测方法做一个浅析。 一、模板注入与常见Web注入就注入类型的漏洞来说，常见 Web 注">
-<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/2.png">
+<meta name="twitter:image" content="http://rickgray.me/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/1.png">
     
     
         
@@ -150,22 +152,26 @@
 <p>而服务端模板注入和常见Web注入的成因一样，也是服务端接收了用户的输入，将其作为 Web 应用模板内容的一部分，在进行目标编译渲染的过程中，执行了用户插入的恶意内容，因而可能导致了敏感信息泄露、代码执行、GetShell 等问题。其影响范围主要取决于模版引擎的复杂性。</p>
 <h3 id="二、模板注入原理"><a href="#二、模板注入原理" class="headerlink" title="二、模板注入原理"></a>二、模板注入原理</h3><p>模板注入涉及的是服务端Web应用使用模板引擎渲染用户请求的过程，这里我们使用 PHP 模版引擎 <a href="http://twig.sensiolabs.org/" target="_blank" rel="noopener">Twig</a> 作为例子来说明模板注入产生的原理。</p>
 <p>考虑下面这段代码：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">```</span><br><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require_once</span> dirname(<span class="keyword">__FILE__</span>).<span class="string">'/../lib/Twig/Autoloader.php'</span>;</span><br><span class="line">Twig_Autoloader::register(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">$twig = <span class="keyword">new</span> Twig_Environment(<span class="keyword">new</span> Twig_Loader_String());</span><br><span class="line">$output = $twig-&gt;render(<span class="string">"Hello &#123;&#123;name&#125;&#125;"</span>, <span class="keyword">array</span>(<span class="string">"name"</span> =&gt; $_GET[<span class="string">"name"</span>]));  <span class="comment">// 将用户输入作为模版变量的值</span></span><br><span class="line"><span class="keyword">echo</span> $output;</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">使用 Twig 模版引擎渲染页面，其中模版含有 `&#123;&#123;name&#125;&#125;` 变量，其模版变量值来自于 GET 请求参数 `$_GET[&quot;name&quot;]`。显然这段代码并没有什么问题，即使你想通过 `name` 参数传递一段 JavaScript 代码给服务端进行渲染，也许你会认为这里可以进行 XSS，但是由于模版引擎一般都默认对渲染的变量值进行编码和转义，所以并不会造成跨站脚本攻击：</span><br><span class="line"></span><br><span class="line">![](/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/1.png)</span><br><span class="line"></span><br><span class="line">但是，如果渲染的模版内容受到用户的控制，情况就不一样了。修改代码为：</span><br><span class="line"></span><br><span class="line">```php</span><br><span class="line">&lt;?php</span><br><span class="line">require_once dirname(__FILE__).&apos;/../lib/Twig/Autoloader.php&apos;;</span><br><span class="line">Twig_Autoloader::register(true);</span><br><span class="line"></span><br><span class="line">$twig = new Twig_Environment(new Twig_Loader_String());</span><br><span class="line">$output = $twig-&gt;render(&quot;Hello &#123;$_GET[&apos;name&apos;]&#125;&quot;);  // 将用户输入作为模版内容的一部分</span><br><span class="line">echo $output;</span><br></pre></td></tr></table></figure>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require_once</span> dirname(<span class="keyword">__FILE__</span>).<span class="string">'/../lib/Twig/Autoloader.php'</span>;</span><br><span class="line">Twig_Autoloader::register(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">$twig = <span class="keyword">new</span> Twig_Environment(<span class="keyword">new</span> Twig_Loader_String());</span><br><span class="line">$output = $twig-&gt;render(<span class="string">"Hello &#123;&#123;name&#125;&#125;"</span>, <span class="keyword">array</span>(<span class="string">"name"</span> =&gt; $_GET[<span class="string">"name"</span>]));  <span class="comment">// 将用户输入作为模版变量的值</span></span><br><span class="line"><span class="keyword">echo</span> $output;</span><br></pre></td></tr></table></figure>
+<p>使用 Twig 模版引擎渲染页面，其中模版含有 <code>{{name}}</code> 变量，其模版变量值来自于 GET 请求参数 <code>$_GET[&quot;name&quot;]</code>。显然这段代码并没有什么问题，即使你想通过 <code>name</code> 参数传递一段 JavaScript 代码给服务端进行渲染，也许你会认为这里可以进行 XSS，但是由于模版引擎一般都默认对渲染的变量值进行编码和转义，所以并不会造成跨站脚本攻击：</p>
+<p><img src="/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/1.png" alt=""></p>
+<p>但是，如果渲染的模版内容受到用户的控制，情况就不一样了。修改代码为：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require_once</span> dirname(<span class="keyword">__FILE__</span>).<span class="string">'/../lib/Twig/Autoloader.php'</span>;</span><br><span class="line">Twig_Autoloader::register(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">$twig = <span class="keyword">new</span> Twig_Environment(<span class="keyword">new</span> Twig_Loader_String());</span><br><span class="line">$output = $twig-&gt;render(<span class="string">"Hello &#123;$_GET['name']&#125;"</span>);  <span class="comment">// 将用户输入作为模版内容的一部分</span></span><br><span class="line"><span class="keyword">echo</span> $output;</span><br></pre></td></tr></table></figure>
 <p>上面这段代码在构建模版时，拼接了用户输入作为模板的内容，如果再向服务端直接传递 JavaScript 代码，用户输入会原样输出，测试结果显而易见：</p>
 <p><img src="/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/2.png" alt=""></p>
 <p>对比上面两种情况，简单的说服务端模板注入的形成终究还是因为服务端相信了用户的输出而造成的（Web安全真谛：永远不要相信用户的输入！）。当然了，第二种情况下，攻击者不仅仅能插入 JavaScript 脚本，还能针对模板框架进行进一步的攻击，此部分只说明原理，在后面会对攻击利用进行详细说明和演示。</p>
 <h3 id="三、模板注入检测"><a href="#三、模板注入检测" class="headerlink" title="三、模板注入检测"></a>三、模板注入检测</h3><p>上面已经讲明了模板注入的形成原来，现在就来谈谈对其进行检测和扫描的方法。如果服务端将用户的输入作为了模板的一部分，那么在页面渲染时也必定会将用户输入的内容进行模版编译和解析最后输出。</p>
 <p>借用本文第二部分所用到的代码：</p>
 <figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="keyword">require_once</span> dirname(<span class="keyword">__FILE__</span>).<span class="string">'/../lib/Twig/Autoloader.php'</span>;</span><br><span class="line">Twig_Autoloader::register(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">$twig = <span class="keyword">new</span> Twig_Environment(<span class="keyword">new</span> Twig_Loader_String());</span><br><span class="line">$output = $twig-&gt;render(<span class="string">"Hello &#123;$_GET['name']&#125;"</span>);  <span class="comment">// 将用户输入作为模版内容的一部分</span></span><br><span class="line"><span class="keyword">echo</span> $output;</span><br></pre></td></tr></table></figure>
-<p>在 Twig 模板引擎里，<code></code> 除了可以输出传递的变量以外，还能执行一些基本的表达式然后将其结果作为该模板变量的值，例如这里用户输入 `name=<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure></p>
-<pre><code>Hello {{2*10}}
-</code></pre><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">    </span><br><span class="line">Twig 模板引擎在编译模板的过程中会计算 `&#123;&#123;2*10&#125;&#125;` 中的表达式 `2*10`，会将其返回值 `20` 作为模板变量的值输出，如下图：</span><br><span class="line"></span><br><span class="line">![](/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/3.png)</span><br><span class="line"></span><br><span class="line">现在把测试的数据改变一下，插入一些正常字符和 Twig 模板引擎默认的注释符，构造 Payload 为：</span><br></pre></td></tr></table></figure>
-<pre><code>IsVuln{{2*8}}OK
-</code></pre><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">    </span><br><span class="line">实际服务端要进行编译的模板就被构造为：</span><br></pre></td></tr></table></figure>
-<pre><code>Hello IsVuln{{2*8}}OK
-</code></pre><p><code>`</code></p>
-<p>这里简单分析一下，由于 <code></code> 作为 Twig 模板引擎的默认注释形式，所以在前端输出的时候并不会显示，而 <code>16</code> 作为模板变量最终会返回 <code>16</code> 作为其值进行显示，因此前端最终会返回内容 <code>Hello IsVuln16OK</code>，如下图：</p>
+<p>在 Twig 模板引擎里，<code>{{ var }}</code> 除了可以输出传递的变量以外，还能执行一些基本的表达式然后将其结果作为该模板变量的值，例如这里用户输入 <code>name={{2*10}}</code>，则在服务端拼接的模版内容为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Hello &#123;&#123;2*10&#125;&#125;</span><br></pre></td></tr></table></figure>
+<p>Twig 模板引擎在编译模板的过程中会计算 <code>{{2*10}}</code> 中的表达式 <code>2*10</code>，会将其返回值 <code>20</code> 作为模板变量的值输出，如下图：</p>
+<p><img src="/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/3.png" alt=""></p>
+<p>现在把测试的数据改变一下，插入一些正常字符和 Twig 模板引擎默认的注释符，构造 Payload 为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">IsVuln&#123;# comment #&#125;&#123;&#123;2*8&#125;&#125;OK</span><br></pre></td></tr></table></figure>
+<p>实际服务端要进行编译的模板就被构造为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Hello IsVuln&#123;# comment #&#125;&#123;&#123;2*8&#125;&#125;OK</span><br></pre></td></tr></table></figure>
+<p>这里简单分析一下，由于 <code>{# comment #}</code> 作为 Twig 模板引擎的默认注释形式，所以在前端输出的时候并不会显示，而 <code>{{2*8}}</code> 作为模板变量最终会返回 <code>16</code> 作为其值进行显示，因此前端最终会返回内容 <code>Hello IsVuln16OK</code>，如下图：</p>
 <p><img src="/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/4.png" alt=""></p>
 <p>通过上面两个简单的示例，就能得到 SSTI 扫描检测的大致流程（这里以 Twig 为例）：</p>
 <p><img src="/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/5.png" alt=""></p>
