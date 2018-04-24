@@ -43,7 +43,7 @@ template.globals['os'] = os
 print template.render()
 ```
 
-执行代码，并传入参数 ```{{ os.popen('echo Hello RCE').read() }}```，因为在模板环境中已经注册了 `os` 变量为 Python `os` 模块，所以可以直接调用模块函数来执行系统命令，这里执行额系统命令为 `echo Hello Command Exection`：
+执行代码，并传入参数 `{% raw %}{{ os.popen('echo Hello RCE').read() }}{% endraw %}`，因为在模板环境中已经注册了 `os` 变量为 Python `os` 模块，所以可以直接调用模块函数来执行系统命令，这里执行额系统命令为 `echo Hello Command Exection`：
 
 ![](/images/articles/2016-02-24-use-python-features-to-execute-arbitrary-codes-in-jinja2-templates/3.png)
 

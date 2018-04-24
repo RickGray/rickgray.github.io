@@ -30,7 +30,6 @@ $temp->render("Hello ".$_GET['username']);
 考虑下面这段代码：
 
 ```php
-```
 <?php
 require_once dirname(__FILE__).'/../lib/Twig/Autoloader.php';
 Twig_Autoloader::register(true);
@@ -39,9 +38,8 @@ $twig = new Twig_Environment(new Twig_Loader_String());
 $output = $twig->render("Hello {{name}}", array("name" => $_GET["name"]));  // 将用户输入作为模版变量的值
 echo $output;
 ```
-```
 
-使用 Twig 模版引擎渲染页面，其中模版含有 `{{name}}` 变量，其模版变量值来自于 GET 请求参数 `$_GET["name"]`。显然这段代码并没有什么问题，即使你想通过 `name` 参数传递一段 JavaScript 代码给服务端进行渲染，也许你会认为这里可以进行 XSS，但是由于模版引擎一般都默认对渲染的变量值进行编码和转义，所以并不会造成跨站脚本攻击：
+使用 Twig 模版引擎渲染页面，其中模版含有 `{% raw %}{{name}}{% endraw %}` 变量，其模版变量值来自于 GET 请求参数 `$_GET["name"]`。显然这段代码并没有什么问题，即使你想通过 `name` 参数传递一段 JavaScript 代码给服务端进行渲染，也许你会认为这里可以进行 XSS，但是由于模版引擎一般都默认对渲染的变量值进行编码和转义，所以并不会造成跨站脚本攻击：
 
 ![](/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/1.png)
 
@@ -79,13 +77,13 @@ $output = $twig->render("Hello {$_GET['name']}");  // 将用户输入作为模�
 echo $output;
 ```
 
-在 Twig 模板引擎里，`{{ var }}` 除了可以输出传递的变量以外，还能执行一些基本的表达式然后将其结果作为该模板变量的值，例如这里用户输入 `name=```{{2*10}}`，则在服务端拼接的模版内容为：
+在 Twig 模板引擎里，`{% raw %}{{ var }}{% endraw %}` 除了可以输出传递的变量以外，还能执行一些基本的表达式然后将其结果作为该模板变量的值，例如这里用户输入 `{% raw %}name={{2*10}}{% endraw %}`，则在服务端拼接的模版内容为：
 
 ```
     Hello {{2*10}}
 ```
     
-Twig 模板引擎在编译模板的过程中会计算 `{{2*10}}` 中的表达式 `2*10`，会将其返回值 `20` 作为模板变量的值输出，如下图：
+Twig 模板引擎在编译模板的过程中会计算 `{% raw %}{{2*10}}{% endraw %}` 中的表达式 `2*10`，会将其返回值 `20` 作为模板变量的值输出，如下图：
 
 ![](/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/3.png)
 
@@ -101,7 +99,7 @@ Twig 模板引擎在编译模板的过程中会计算 `{{2*10}}` 中的表达式
     Hello IsVuln{# comment #}{{2*8}}OK
 ```
     
-这里简单分析一下，由于 `{# comment #}` 作为 Twig 模板引擎的默认注释形式，所以在前端输出的时候并不会显示，而 `{{2*8}}` 作为模板变量最终会返回 `16` 作为其值进行显示，因此前端最终会返回内容 `Hello IsVuln16OK`，如下图：
+这里简单分析一下，由于 `{% raw %}{# comment #}{% endraw %}` 作为 Twig 模板引擎的默认注释形式，所以在前端输出的时候并不会显示，而 `{% raw %}{{2*8}}{% endraw %}` 作为模板变量最终会返回 `16` 作为其值进行显示，因此前端最终会返回内容 `Hello IsVuln16OK`，如下图：
     
 ![](/images/articles/2015-11-03-server-side-template-injection-attack-to-smarty/4.png)
 
