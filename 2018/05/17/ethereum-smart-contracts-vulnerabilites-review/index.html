@@ -7,7 +7,7 @@
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="（注：本文分上/下两部分完成） 最近区块链漏洞不要太火，什么交易所用户被钓鱼导致 APIKEY 泄漏，代币合约出现整数溢出漏洞致使代币归零， MyEtherWallet 遭 DNS 劫持致使用户 ETH 被盗等等。频频爆出的区块链安全事件，越来越多的安全从业者将目标转到了 Blockchain 上。经过一段时间的恶补，让我从以太坊智能合约 “青铜I段” 升到了 “青铜III段”，本文将从以太坊智能">
-<meta name="keywords" content="security,blockchain,ethereum">
+<meta name="keywords" content="security,ethereum,blockchain">
 <meta property="og:type" content="article">
 <meta property="og:title" content="以太坊智能合约安全入门了解一下（上）">
 <meta property="og:url" content="http://rickgray.me/2018/05/17/ethereum-smart-contracts-vulnerabilites-review/index.html">
@@ -22,7 +22,7 @@
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/reentrancy_demo.gif">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/7.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/delegatecall_demo.gif">
-<meta property="og:updated_time" content="2018-05-17T09:16:00.037Z">
+<meta property="og:updated_time" content="2018-05-17T09:21:29.497Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="以太坊智能合约安全入门了解一下（上）">
 <meta name="twitter:description" content="（注：本文分上/下两部分完成） 最近区块链漏洞不要太火，什么交易所用户被钓鱼导致 APIKEY 泄漏，代币合约出现整数溢出漏洞致使代币归零， MyEtherWallet 遭 DNS 劫持致使用户 ETH 被盗等等。频频爆出的区块链安全事件，越来越多的安全从业者将目标转到了 Blockchain 上。经过一段时间的恶补，让我从以太坊智能合约 “青铜I段” 升到了 “青铜III段”，本文将从以太坊智能">
@@ -191,17 +191,17 @@
 </ol>
 <p><strong>注：目前已知的关于 Solidity 的安全问题大多都会涉及到 fallback 函数</strong></p>
 <h4 id="4-几种转币方法对比"><a href="#4-几种转币方法对比" class="headerlink" title="4. 几种转币方法对比"></a>4. 几种转币方法对比</h4><p>Solidity 中 <code>&lt;address&gt;.transfer()</code>，<code>&lt;address&gt;.send()</code> 和 <code>&lt;address&gt;.gas().call.vale()()</code> 都可以用于向某一地址发送 ether，他们的区别在于：</p>
-<p><strong>\<address>.transfer()</address></strong></p>
+<p><strong>&lt;address>.transfer()</strong></p>
 <ul>
 <li>当发送失败时会 <code>throw;</code> 回滚状态</li>
 <li>只会传递 2300 Gas 供调用，防止重入（reentrancy）</li>
 </ul>
-<p><strong>\<address>.send()</address></strong></p>
+<p><strong>&lt;address>.send()</strong></p>
 <ul>
 <li>当发送失败时会返回 <code>false</code> 布尔值</li>
 <li>只会传递 2300 Gas 供调用，防止重入（reentrancy）</li>
 </ul>
-<p><strong>\<address>.gas().call.value()()</address></strong></p>
+<p><strong>&lt;address>.gas().call.value()()</strong></p>
 <ul>
 <li>当发送失败时会返回 <code>false</code> 布尔值</li>
 <li>传递所有可用 Gas 进行调用（可通过 <code>gas(gas_value)</code> 进行限制），不能有效防止重入（reentrancy）</li>
