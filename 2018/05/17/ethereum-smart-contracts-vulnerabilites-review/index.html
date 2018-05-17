@@ -22,7 +22,7 @@
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/reentrancy_demo.gif">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/7.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/delegatecall_demo.gif">
-<meta property="og:updated_time" content="2018-05-17T09:21:29.497Z">
+<meta property="og:updated_time" content="2018-05-17T09:40:52.737Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="以太坊智能合约安全入门了解一下（上）">
 <meta name="twitter:description" content="（注：本文分上/下两部分完成） 最近区块链漏洞不要太火，什么交易所用户被钓鱼导致 APIKEY 泄漏，代币合约出现整数溢出漏洞致使代币归零， MyEtherWallet 遭 DNS 劫持致使用户 ETH 被盗等等。频频爆出的区块链安全事件，越来越多的安全从业者将目标转到了 Blockchain 上。经过一段时间的恶补，让我从以太坊智能合约 “青铜I段” 升到了 “青铜III段”，本文将从以太坊智能">
@@ -151,7 +151,7 @@
 <p>最近区块链漏洞不要太火，什么交易所用户被钓鱼导致 APIKEY 泄漏，代币合约出现整数溢出漏洞致使代币归零， MyEtherWallet 遭 DNS 劫持致使用户 ETH 被盗等等。频频爆出的区块链安全事件，越来越多的安全从业者将目标转到了 Blockchain 上。经过一段时间的恶补，让我从以太坊智能合约 “青铜I段” 升到了 “青铜III段”，本文将从以太坊智能合约的一些特殊机制说起，详细地剖析已发现各种漏洞类型，对每一种漏洞类型都会提供一段简单的合约代码来对漏洞成因和攻击方法进行说明。</p>
 <p>在阅读接下来的文章内容之前，我假定你已经对以太坊智能合约的相关概念已经有了一定的了解。如果从开发者的角度来看智能，大概是这个样子：</p>
 <p><img src="/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/1.png" alt=""></p>
-<p>以太坊专门提供了一种叫 EVM 的虚拟机供合约代码运行，同时也提供了面向合约的语言来加快开发者开发合约，像官方推荐且用的最多的 Solidity 是一种语法类似 JavaScript 的合约开发语言。开发者按一定的业务逻辑编写合约代码，并将其部署到以太坊上，代码根据业务逻辑将数<code></code>123`12 据记录在链上。以太坊其实就是一个应用生态平台，借助智能合约我们可以开发出各式各样的应用发布到以太坊上供业务直接使用。关于以太坊/智能合约的概念可参考<a href="http://solidity-cn.readthedocs.io/zh/develop/introduction-to-smart-contracts.html" target="_blank" rel="noopener">文档</a>。</p>
+<p>以太坊专门提供了一种叫 EVM 的虚拟机供合约代码运行，同时也提供了面向合约的语言来加快开发者开发合约，像官方推荐且用的最多的 Solidity 是一种语法类似 JavaScript 的合约开发语言。开发者按一定的业务逻辑编写合约代码，并将其部署到以太坊上，代码根据业务逻辑将数据记录在链上。以太坊其实就是一个应用生态平台，借助智能合约我们可以开发出各式各样的应用发布到以太坊上供业务直接使用。关于以太坊/智能合约的概念可参考<a href="http://solidity-cn.readthedocs.io/zh/develop/introduction-to-smart-contracts.html" target="_blank" rel="noopener">文档</a>。</p>
 <p>接下来也是以 Solidity 为例来说明以太坊智能合约的一些已存在安全问题。</p>
 <h3 id="I-智能合约开发-Solidity"><a href="#I-智能合约开发-Solidity" class="headerlink" title="I. 智能合约开发 - Solidity"></a>I. 智能合约开发 - Solidity</h3><p>Solidity 的语法类似 JavaSript，整体还是比较好上手，一个简单的用 Solidity 编写的合约代码如下</p>
 <p><img src="/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/2.png" alt=""></p>
