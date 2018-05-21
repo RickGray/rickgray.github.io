@@ -73,10 +73,10 @@ favicon:
     url: /images/favicon.ico
     gravatar: false
   android:
-    url: /images/favicon-192x192.png
+    url: /images/logo.png
     gravatar: false
   apple:
-    url: /images/apple-touch-icon.png
+    url: /images/logo.png
     gravatar: false
 
 # The color scheme that should be used to highlight codeblocks.
@@ -118,8 +118,8 @@ disqus:
 
 # Fill in your Google Analytics tracking ID to enable Google Analytics.
 google_analytics: 
-  enabled: false
-  id: UA-86660611-1
+  enabled: true
+  id: UA-107844377-1
 
 # Fill in your Baidu Analytics tracking ID to enable Baidu Analytics.
 baidu_analytics:
