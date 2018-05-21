@@ -18,6 +18,7 @@ nav:
 #  about: /
   articles: /archives/
   projects: http://github.com/RickGray
+  RSS: /atom.xml
 
 
 # Links to your social media accounts.
@@ -81,7 +82,7 @@ favicon:
 
 # The color scheme that should be used to highlight codeblocks.
 # See source/css/_highlight for a list of all available color schemes.
-# highlight: rainbow
+highlight: rainbow
 
 # Set the color scheme.
 # Available color schemes are 'dark', 'light', 'classic' and 'white'.
@@ -124,7 +125,7 @@ google_analytics:
 # Fill in your Baidu Analytics tracking ID to enable Baidu Analytics.
 baidu_analytics:
   enabled: false
-  id: 2e6da3c375c8a87f5b664cea6d4cb29c
+  id: 
 
 # Fill in you Gravatar user id / email if you want to use your gravatar as the
 # logo and/or favicons of you website.
