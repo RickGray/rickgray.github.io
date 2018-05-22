@@ -7,7 +7,7 @@
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="分布式应用中消息队列使用特别广泛，而针对分布式集群的攻击常常是点到面的扩散，突破关键点从而控制整个集群。在使用消息队列传递消息时，不安全的数据序列化方式便为整体系统埋下了一颗定时炸弹，一旦消息代理中间件被攻破就会导致整个工作节点沦陷。 （本文只对可行思路进行阐述，如有不恰当之处，还望指出） 一、消息队列与数据序列化1. 消息队列代理在一个分布式系统中，消息队列（MQ）是必不可少的，任务下发到消息队">
-<meta name="keywords" content="web,security">
+<meta name="keywords" content="security,web">
 <meta property="og:type" content="article">
 <meta property="og:title" content="定时炸弹 - MQ 代理中危险的序列化数据">
 <meta property="og:url" content="http://rickgray.me/2016/04/08/serialization-troubles-in-message-queuing-componet/index.html">
@@ -321,6 +321,16 @@
     </script>
 
 <!-- Baidu Analytics -->
+
+    <script type="text/javascript">
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?0f915a3cf9e7f6e376f67cb4f6ef3562";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
 
 <!-- Disqus Comments -->
 

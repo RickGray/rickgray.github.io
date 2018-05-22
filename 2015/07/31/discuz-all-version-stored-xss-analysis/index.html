@@ -7,7 +7,7 @@
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="乌云上有人发了《Discuz全版本存储型DOM XSS（可打管理员）附Discuz官方开发4大坑&amp;amp;验证脚本》，借此文顺带练习了一下 JS 调试，下面是整个漏洞的分析。 Discuz在用户评论处设置了帖子管理员编辑评论的功能，由于前端JS代码处理不当导致了经过恶意构造的评论内容在经过交互后形成XSS。下面通过payload的调试过程来解释该漏洞的形成过程。 首先，在评论处提交评论内容：[em">
-<meta name="keywords" content="web,security,xss">
+<meta name="keywords" content="security,web,xss">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Discuz 全版本存储 XSS 分析">
 <meta property="og:url" content="http://rickgray.me/2015/07/31/discuz-all-version-stored-xss-analysis/index.html">
@@ -305,6 +305,16 @@
     </script>
 
 <!-- Baidu Analytics -->
+
+    <script type="text/javascript">
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?0f915a3cf9e7f6e376f67cb4f6ef3562";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
 
 <!-- Disqus Comments -->
 
