@@ -126,7 +126,7 @@ Solidity 中 `<address>.transfer()`，`<address>.send()` 和 `<address>.gas().ca
 
 所以，通过一段时间的学习，在这我将已经明白的关于以太坊合约的几个漏洞原理记录下来，有兴趣的可以进一步交流。
 
-下面列出了已知的常见的 Solidity 的漏洞类型：
+下面列出了已知的常见的 Solidity 的漏洞类型（来自于 [DASP Top 10](https://www.dasp.co/)）：
 
 1. Reentrancy - 重入
 2. Access Control - 访问控制
