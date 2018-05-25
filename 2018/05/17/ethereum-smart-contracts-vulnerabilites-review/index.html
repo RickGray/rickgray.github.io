@@ -22,7 +22,7 @@
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/reentrancy_demo.gif">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/7.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/delegatecall_demo.gif">
-<meta property="og:updated_time" content="2018-05-22T02:51:54.212Z">
+<meta property="og:updated_time" content="2018-05-25T19:04:50.667Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="以太坊智能合约安全入门了解一下（上）">
 <meta name="twitter:description" content="（注：本文分上/下两部分完成） 最近区块链漏洞不要太火，什么交易所用户被钓鱼导致 APIKEY 泄漏，代币合约出现整数溢出漏洞致使代币归零， MyEtherWallet 遭 DNS 劫持致使用户 ETH 被盗等等。频频爆出的区块链安全事件，越来越多的安全从业者将目标转到了 Blockchain 上。经过一段时间的恶补，让我从以太坊智能合约 “青铜I段” 升到了 “青铜III段”，本文将从以太坊智能">
@@ -265,7 +265,7 @@
 <p>使用 <code>remix-ide</code> 模拟攻击流程：</p>
 <p><img src="/images/articles/2018-05-17-ethereum-smart-contracts-vulnerabilites-review/delegatecall_demo.gif" alt=""></p>
 <p>2017 年下半年出现的智能合约钱包 Parity 被盗事件就跟未授权和 <code>delegatecall</code> 有关。</p>
-<p><strong>（注：本文上部主要讲解了以太坊智能合约安全的研究基础和两类漏洞原理实例，在《以太坊智能合约安全入门了解一下（下）》中会补全其他几类漏洞的原理讲解，并有一小节 “自我思考” 来总结我在学习和研究以太坊智能合约安全时遇到的细节问题）</strong></p>
+<p><strong>（注：本文上部主要讲解了以太坊智能合约安全的研究基础和两类漏洞原理实例，在<a href="http://rickgray.me/2018/05/26/ethereum-smart-contracts-vulnerabilities-review-part2/#3-Arithmetic-Issues">《以太坊智能合约安全入门了解一下（下）》</a>中会补全其他几类漏洞的原理讲解，并有一小节 “自我思考” 来总结我在学习和研究以太坊智能合约安全时遇到的细节问题）</strong></p>
 <h3 id="参考链接："><a href="#参考链接：" class="headerlink" title="参考链接："></a>参考链接：</h3><ul>
 <li><a href="http://solidity.readthedocs.io/en/v0.4.21/contracts.html#fallback-function" target="_blank" rel="noopener">http://solidity.readthedocs.io/en/v0.4.21/contracts.html#fallback-function</a></li>
 <li><a href="https://consensys.github.io/smart-contract-best-practices/recommendations/#be-aware-of-the-tradeoffs-between-send-transfer-and-callvalue" target="_blank" rel="noopener">https://consensys.github.io/smart-contract-best-practices/recommendations/#be-aware-of-the-tradeoffs-between-send-transfer-and-callvalue</a></li>

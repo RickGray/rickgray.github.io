@@ -6,13 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="（注：本文分上/下两部分完成，上篇链接《以太坊智能合约安全入门了解一下（上）》，上/下完整版(PDF)） 接上篇 3. Arithmetic Issues算数问题？通常来说，在编程语言里算数问题导致的漏洞最多的就是整数溢出了，整数溢出又分为上溢和下溢。整数溢出的原理其实很简单，这里以 8 位无符整型为例，8 位整型可表示的范围为 [0, 255]，255 在内存中存储按位存储的形式为（下图左）：">
+    <meta name="description" content="（注：本文分上/下两部分完成，上篇链接《以太坊智能合约安全入门了解一下（上）》） 接上篇 3. Arithmetic Issues算数问题？通常来说，在编程语言里算数问题导致的漏洞最多的就是整数溢出了，整数溢出又分为上溢和下溢。整数溢出的原理其实很简单，这里以 8 位无符整型为例，8 位整型可表示的范围为 [0, 255]，255 在内存中存储按位存储的形式为（下图左）：  8 位无符整数 255">
 <meta name="keywords" content="security,ethereum,blockchain">
 <meta property="og:type" content="article">
 <meta property="og:title" content="以太坊智能合约安全入门了解一下（下）">
 <meta property="og:url" content="http://rickgray.me/2018/05/26/ethereum-smart-contracts-vulnerabilities-review-part2/index.html">
 <meta property="og:site_name" content="rickgray.me">
-<meta property="og:description" content="（注：本文分上/下两部分完成，上篇链接《以太坊智能合约安全入门了解一下（上）》，上/下完整版(PDF)） 接上篇 3. Arithmetic Issues算数问题？通常来说，在编程语言里算数问题导致的漏洞最多的就是整数溢出了，整数溢出又分为上溢和下溢。整数溢出的原理其实很简单，这里以 8 位无符整型为例，8 位整型可表示的范围为 [0, 255]，255 在内存中存储按位存储的形式为（下图左）：">
+<meta property="og:description" content="（注：本文分上/下两部分完成，上篇链接《以太坊智能合约安全入门了解一下（上）》） 接上篇 3. Arithmetic Issues算数问题？通常来说，在编程语言里算数问题导致的漏洞最多的就是整数溢出了，整数溢出又分为上溢和下溢。整数溢出的原理其实很简单，这里以 8 位无符整型为例，8 位整型可表示的范围为 [0, 255]，255 在内存中存储按位存储的形式为（下图左）：  8 位无符整数 255">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-26-ethereum-smart-contracts-vulnerabilities-review-part2/8.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-26-ethereum-smart-contracts-vulnerabilities-review-part2/9.png">
@@ -25,10 +25,10 @@
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-26-ethereum-smart-contracts-vulnerabilities-review-part2/17.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-26-ethereum-smart-contracts-vulnerabilities-review-part2/18.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2018-05-26-ethereum-smart-contracts-vulnerabilities-review-part2/19.png">
-<meta property="og:updated_time" content="2018-05-25T19:02:11.915Z">
+<meta property="og:updated_time" content="2018-05-25T19:17:51.468Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="以太坊智能合约安全入门了解一下（下）">
-<meta name="twitter:description" content="（注：本文分上/下两部分完成，上篇链接《以太坊智能合约安全入门了解一下（上）》，上/下完整版(PDF)） 接上篇 3. Arithmetic Issues算数问题？通常来说，在编程语言里算数问题导致的漏洞最多的就是整数溢出了，整数溢出又分为上溢和下溢。整数溢出的原理其实很简单，这里以 8 位无符整型为例，8 位整型可表示的范围为 [0, 255]，255 在内存中存储按位存储的形式为（下图左）：">
+<meta name="twitter:description" content="（注：本文分上/下两部分完成，上篇链接《以太坊智能合约安全入门了解一下（上）》） 接上篇 3. Arithmetic Issues算数问题？通常来说，在编程语言里算数问题导致的漏洞最多的就是整数溢出了，整数溢出又分为上溢和下溢。整数溢出的原理其实很简单，这里以 8 位无符整型为例，8 位整型可表示的范围为 [0, 255]，255 在内存中存储按位存储的形式为（下图左）：  8 位无符整数 255">
 <meta name="twitter:image" content="http://rickgray.me/images/articles/2018-05-26-ethereum-smart-contracts-vulnerabilities-review-part2/8.png">
     
     
@@ -152,7 +152,7 @@
   
 
   <div class="content" itemprop="articleBody">
-    <p><strong>（注：本文分上/下两部分完成，上篇链接<a href="http://rickgray.me/2018/05/17/ethereum-smart-contracts-vulnerabilites-review/">《以太坊智能合约安全入门了解一下（上）》</a>，<a href="/files/Ethereum_Smart_Contract_Vulnerabilities_Review.pdf">上/下完整版(PDF)</a>）</strong> 接上篇</p>
+    <p><strong>（注：本文分上/下两部分完成，上篇链接<a href="http://rickgray.me/2018/05/17/ethereum-smart-contracts-vulnerabilites-review/">《以太坊智能合约安全入门了解一下（上）》</a>）</strong> 接上篇</p>
 <h4 id="3-Arithmetic-Issues"><a href="#3-Arithmetic-Issues" class="headerlink" title="3. Arithmetic Issues"></a>3. Arithmetic Issues</h4><p>算数问题？通常来说，在编程语言里算数问题导致的漏洞最多的就是整数溢出了，整数溢出又分为上溢和下溢。整数溢出的原理其实很简单，这里以 8 位无符整型为例，8 位整型可表示的范围为 <code>[0, 255]</code>，<code>255</code> 在内存中存储按位存储的形式为（下图左）：</p>
 <p><img src="/images/articles/2018-05-26-ethereum-smart-contracts-vulnerabilities-review-part2/8.png" alt=""></p>
 <p>8 位无符整数 255 在内存中占据了 8bit 位置，若再加上 1 整体会因为进位而导致整体翻转为 0，最后导致原有的 8bit 表示的整数变为 0.</p>
