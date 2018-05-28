@@ -7,7 +7,7 @@
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="vBulletin 的一枚 RCE 利用和简要的分析被曝光，产生漏洞的原因源于 vBulletin 程序在处理 Ajax API 调用的时候，使用 unserialize() 对传递的参数值进行了反序列化操作，导致攻击者使用精心构造出的 Payload 直接导致代码执行。关于 PHP 中反序列化漏洞的问题可以参考 OWASP 的《PHP Object Injection》。 使用 原文 提供的 P">
-<meta name="keywords" content="web,security,php">
+<meta name="keywords" content="security,web,php">
 <meta property="og:type" content="article">
 <meta property="og:title" content="unserialize() 实战之 vBulletin 5.x.x 远程代码执行">
 <meta property="og:url" content="http://rickgray.me/2015/11/06/unserialize-attack-with-vbulletin-5-x-x-rce/index.html">
