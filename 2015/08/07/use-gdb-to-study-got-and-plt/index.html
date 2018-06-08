@@ -22,7 +22,7 @@
 <meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-6.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-7.png">
 <meta property="og:image" content="http://rickgray.me/images/articles/2015-08-07-use-gdb-to-study-got-and-plt/got-8.png">
-<meta property="og:updated_time" content="2018-04-24T15:48:57.517Z">
+<meta property="og:updated_time" content="2018-06-04T17:29:18.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="通过 GDB 调试理解 GOT&#x2F;PLT">
 <meta name="twitter:description" content="关于 Linux 中 ELF 文件格式可参考详细文档《ELF_Format》，本文仅记录笔者理解GOT/PLT的过程。 GOT（Global Offset Table）：全局偏移表用于记录在 ELF 文件中所用到的共享库中符号的绝对地址。在程序刚开始运行时，GOT 表项是空的，当符号第一次被调用时会动态解析符号的绝对地址然后转去执行，并将被解析符号的绝对地址记录在 GOT 中，第二次调用同一符号时">
